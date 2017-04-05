@@ -1,0 +1,14 @@
+package: github.com/tracerun/tdb
+import:
+- package: github.com/golang/protobuf
+  subpackages:
+  - proto
+testImport:
+- package: github.com/stretchr/testify
+  subpackages:
+  - assert
+- package: github.com/mattn/goveralls
+- package: github.com/pborman/uuid
+- package: golang.org/x/tools
+  subpackages:
+  - cover

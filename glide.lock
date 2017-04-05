@@ -1,0 +1,20 @@
+hash: ed379672f2bf87d7793aae636d72c8564587e655846376b2139fa282fc31dff1
+updated: 2017-04-05T17:56:31.7112678+08:00
+imports:
+- name: github.com/golang/protobuf
+  version: c9c7427a2a70d2eb3bafa0ab2dc163e45f143317
+  subpackages:
+  - proto
+testImports:
+- name: github.com/mattn/goveralls
+  version: 9d621f6940639bf287ecbb6f585a2c26eeba3bbe
+- name: github.com/pborman/uuid
+  version: 1b00554d822231195d1babd97ff4a781231955c9
+- name: github.com/stretchr/testify
+  version: 4d4bfba8f1d1027c4fdbe371823030df51419987
+  subpackages:
+  - assert
+- name: golang.org/x/tools
+  version: 37a1062ad0bb70f026cd45d6b92cb37eacd927bb
+  subpackages:
+  - cover

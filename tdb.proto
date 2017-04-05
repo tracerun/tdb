@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message Info {
+  map<string, bytes> fields = 1;
+}
