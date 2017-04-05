@@ -19,6 +19,8 @@ type info struct {
 func createInfo(p string) (*info, error) {
 	one := &info{path: p}
 	one.content = make(map[string][]byte)
+	one.contentLock = new(sync.RWMutex)
+	one.fileLock = new(sync.RWMutex)
 
 	if stat, err := os.Stat(p); err != nil {
 		if os.IsNotExist(err) {
@@ -35,17 +37,21 @@ func createInfo(p string) (*info, error) {
 }
 
 func (one *info) loadContent() error {
-	one.fileLock.RLock()
-	b, _ := ioutil.ReadFile(one.path)
-	one.fileLock.RUnlock()
-
 	one.contentLock.Lock()
 	defer one.contentLock.Unlock()
+
+	one.fileLock.RLock()
+	b, err := ioutil.ReadFile(one.path)
+	one.fileLock.RUnlock()
+	if err != nil {
+		return err
+	}
 
 	var pbInfo Info
 	if err := proto.Unmarshal(b, &pbInfo); err != nil {
 		return err
 	}
+
 	one.content = pbInfo.Fields
 
 	return nil
