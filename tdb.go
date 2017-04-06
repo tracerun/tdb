@@ -6,11 +6,10 @@ import (
 
 // TDB is the entrance point.
 type TDB struct {
-	// the folder path used for tdb
-	path string
+	path string // the folder path used for tdb
 
-	slot *info
-	meta *info
+	slot *info // slot index info
+	meta *info // meta info
 }
 
 // Open creates an instance of TDB.
@@ -31,6 +30,11 @@ func Open(p string) (*TDB, error) {
 
 	// load meta information
 	if err := db.loadMeta(); err != nil {
+		return nil, err
+	}
+
+	// load slot index
+	if err := db.loadSlotIndex(); err != nil {
 		return nil, err
 	}
 
