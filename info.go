@@ -31,12 +31,12 @@ func createInfo(p string) (*info, error) {
 		return one, ErrInfoFilePath
 	}
 
-	err := one.loadContent()
+	err := one.load()
 
 	return one, err
 }
 
-func (one *info) loadContent() error {
+func (one *info) load() error {
 	one.contentLock.Lock()
 	defer one.contentLock.Unlock()
 
@@ -57,9 +57,13 @@ func (one *info) loadContent() error {
 	return nil
 }
 
-func (one *info) setContent(k []string, v [][]byte) error {
+func (one *info) update(k []string, v [][]byte) error {
 	if len(k) != len(v) {
 		return errors.New("k, v length not equal")
+	}
+
+	if len(k) == 0 {
+		return nil
 	}
 
 	one.contentLock.Lock()
