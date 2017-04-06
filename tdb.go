@@ -8,6 +8,9 @@ import (
 type TDB struct {
 	// the folder path used for tdb
 	path string
+
+	slot *info
+	meta *info
 }
 
 // Open creates an instance of TDB.
@@ -19,10 +22,17 @@ func Open(p string) (*TDB, error) {
 			if err := os.MkdirAll(p, os.ModePerm); err != nil {
 				return nil, err
 			}
+		} else {
+			return db, err
 		}
-		return db, err
 	} else if !stat.IsDir() {
 		return db, ErrDBPathNotFolder
 	}
+
+	// load meta information
+	if err := db.loadMeta(); err != nil {
+		return nil, err
+	}
+
 	return db, nil
 }

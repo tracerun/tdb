@@ -3,7 +3,7 @@ package tdb
 import "math/rand"
 
 const (
-	letterBytes = "0123456789abcdefghijklmnopqrstuvwxyz"
+	letterBytes = "123456789abcdefghijklmnopqrstuvwxyz0"
 	letterLen   = 36
 )
 
@@ -13,4 +13,8 @@ func randBytes(n int) []byte {
 		b[i] = letterBytes[rand.Intn(letterLen)]
 	}
 	return b
+}
+
+func addSlot(index *info, target string, start, howlong uint32) {
+
 }

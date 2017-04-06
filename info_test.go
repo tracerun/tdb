@@ -34,16 +34,16 @@ func TestInfoMethods(t *testing.T) {
 
 	key := "key"
 	value := []byte("value")
-	err = one.update([]string{key}, [][]byte{value})
+	err = one.updateInfo([]string{key}, [][]byte{value})
 	assert.NoError(t, err, "should have no error while updating the content")
 	assert.Len(t, one.content, 1, "should have one content")
 
 	// k, v length not equal
-	err = one.update([]string{key}, [][]byte{value, value})
+	err = one.updateInfo([]string{key}, [][]byte{value, value})
 	assert.Error(t, err, "should have error when k, v length not equal")
 
 	// empty k, v
-	err = one.update([]string{}, [][]byte{})
+	err = one.updateInfo([]string{}, [][]byte{})
 	assert.NoError(t, err, "should have no error while updating nothing")
 
 	// load an existing content
@@ -72,10 +72,10 @@ func BenchmarkLoad(b *testing.B) {
 		keys = append(keys, string(k))
 		values = append(values, v)
 	}
-	one.update(keys, values)
+	one.updateInfo(keys, values)
 
 	for i := 0; i < b.N; i++ {
-		one.load()
+		one.loadInfo()
 	}
 
 	if len(one.content) != 10 {
@@ -104,7 +104,7 @@ func BenchmarkUpdate(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		one.update(keys, values)
+		one.updateInfo(keys, values)
 	}
 
 	if len(one.content) != 10 {

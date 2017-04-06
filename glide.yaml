@@ -3,6 +3,7 @@ import:
 - package: github.com/golang/protobuf
   subpackages:
   - proto
+- package: github.com/drkaka/ulid
 testImport:
 - package: github.com/stretchr/testify
   subpackages:
