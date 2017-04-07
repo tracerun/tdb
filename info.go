@@ -58,6 +58,12 @@ func (one *info) loadInfo() error {
 	return nil
 }
 
+func (one *info) getValue(k string) []byte {
+	one.contentLock.RLock()
+	defer one.contentLock.RUnlock()
+	return one.content[k]
+}
+
 // update the given keys, values content and write to file
 func (one *info) updateInfo(k []string, v [][]byte) error {
 	if len(k) != len(v) {

@@ -38,6 +38,14 @@ func TestInfoMethods(t *testing.T) {
 	assert.NoError(t, err, "should have no error while updating the content")
 	assert.Len(t, one.content, 1, "should have one content")
 
+	// get value
+	value1 := one.getValue(key)
+	assert.EqualValues(t, value, value1, "get value wrong")
+
+	// get a not existed value
+	value2 := one.getValue("not exist")
+	assert.Nil(t, value2, "should have nil value")
+
 	// k, v length not equal
 	err = one.updateInfo([]string{key}, [][]byte{value, value})
 	assert.Error(t, err, "should have error when k, v length not equal")
@@ -53,20 +61,25 @@ func TestInfoMethods(t *testing.T) {
 	assert.EqualValues(t, one.content[key], two.content[key], "the values should be the same")
 }
 
-func BenchmarkLoad(b *testing.B) {
+func BenchmarkLoad10(b *testing.B) {
+	benchmarkLoad(b, 10)
+}
+
+func BenchmarkUpdate10(b *testing.B) {
+	benchmarkUpdate(b, 10)
+}
+
+func benchmarkLoad(b *testing.B, count int) {
 	benchInfo := "bench_info_load"
 	defer os.Remove(benchInfo)
 	one, err := createInfo(benchInfo)
 	if err != nil {
 		b.Fatal(err)
 	}
-	if len(one.content) != 0 {
-		b.Error("should have empty content")
-	}
 
 	var keys []string
 	var values [][]byte
-	for i := 0; i < 10; i++ {
+	for i := 0; i < count; i++ {
 		k := randBytes(30)
 		v := randBytes(8)
 		keys = append(keys, string(k))
@@ -78,25 +91,22 @@ func BenchmarkLoad(b *testing.B) {
 		one.loadInfo()
 	}
 
-	if len(one.content) != 10 {
-		b.Error("should have 10 content")
+	if len(one.content) != count {
+		b.Errorf("should have %d content", count)
 	}
 }
 
-func BenchmarkUpdate(b *testing.B) {
+func benchmarkUpdate(b *testing.B, count int) {
 	benchInfo := "bench_info_update"
 	defer os.Remove(benchInfo)
 	one, err := createInfo(benchInfo)
 	if err != nil {
 		b.Fatal(err)
 	}
-	if len(one.content) != 0 {
-		b.Error("should have empty content")
-	}
 
 	var keys []string
 	var values [][]byte
-	for i := 0; i < 10; i++ {
+	for i := 0; i < count; i++ {
 		k := randBytes(30)
 		v := randBytes(8)
 		keys = append(keys, string(k))
@@ -107,7 +117,7 @@ func BenchmarkUpdate(b *testing.B) {
 		one.updateInfo(keys, values)
 	}
 
-	if len(one.content) != 10 {
-		b.Error("should have 10 content")
+	if len(one.content) != count {
+		b.Errorf("should have %d content", count)
 	}
 }

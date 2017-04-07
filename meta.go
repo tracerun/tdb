@@ -1,12 +1,15 @@
 package tdb
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/user"
 	"path"
 	"runtime"
 	"time"
+
+	"encoding/binary"
 
 	"github.com/drkaka/ulid"
 )
@@ -16,12 +19,13 @@ const (
 
 	version = uint8(1)
 
-	versionKey  = "version"
-	tagKey      = "tag"
-	hostKey     = "host"
-	archKey     = "arch"
-	usernameKey = "username"
-	osKey       = "os"
+	versionKey    = "version"
+	tagKey        = "tag"
+	hostKey       = "host"
+	archKey       = "arch"
+	usernameKey   = "username"
+	osKey         = "os"
+	zoneOffsetKey = "zoneoffset"
 )
 
 func (db *TDB) loadMeta() error {
@@ -45,9 +49,10 @@ func (meta *info) generateMeta() error {
 	keys = append(keys, versionKey)
 	values = append(values, []byte{byte(version)})
 
+	now := time.Now()
 	// tag
 	var id ulid.ULID
-	if id, err = ulid.NewFromTime(time.Now()); err != nil {
+	if id, err = ulid.NewFromTime(now); err != nil {
 		return err
 	}
 	keys = append(keys, tagKey)
@@ -76,6 +81,15 @@ func (meta *info) generateMeta() error {
 	// os
 	keys = append(keys, osKey)
 	values = append(values, []byte(runtime.GOOS))
+
+	// zone offset
+	_, zoneOffset := now.Zone()
+	buf := new(bytes.Buffer)
+	if err := binary.Write(buf, binary.LittleEndian, int32(zoneOffset)); err != nil {
+		return err
+	}
+	keys = append(keys, zoneOffsetKey)
+	values = append(values, buf.Bytes())
 
 	return meta.updateInfo(keys, values)
 }
@@ -164,4 +178,18 @@ func (db *TDB) Username() (string, error) {
 // OS info
 func (db *TDB) OS() (string, error) {
 	return db.stringMeta(osKey)
+}
+
+// ZoneOffset of local zone
+func (db *TDB) ZoneOffset() (int32, error) {
+	b, err := db.getMeta(zoneOffsetKey)
+	if err != nil {
+		return 0, err
+	}
+	buf := new(bytes.Buffer)
+	buf.Write(b)
+
+	var offset int32
+	err = binary.Read(buf, binary.LittleEndian, &offset)
+	return offset, err
 }
