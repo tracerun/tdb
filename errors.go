@@ -11,4 +11,6 @@ var (
 	ErrPathNotFile = errors.New("path is not a file")
 	// ErrNotExist something not exist
 	ErrNotExist = errors.New("not exist")
+	// ErrRange the range is wrong
+	ErrRange = errors.New("range is wrong")
 )

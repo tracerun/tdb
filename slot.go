@@ -2,14 +2,11 @@ package tdb
 
 import (
 	"encoding/binary"
-	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -28,10 +25,21 @@ const (
 
 var (
 	slotLocker *sync.RWMutex
+	fileLocker *slotFileLocker
 )
+
+type slotFileLocker struct {
+	files map[string]*sync.RWMutex
+	lock  *sync.RWMutex
+}
 
 func init() {
 	slotLocker = new(sync.RWMutex)
+
+	fileLocker = &slotFileLocker{
+		files: make(map[string]*sync.RWMutex),
+		lock:  new(sync.RWMutex),
+	}
 }
 
 // AddSlot to add a slot to database
@@ -119,19 +127,12 @@ func (db *TDB) getTargetHome(target string) (string, error) {
 // start is a unixtime
 // return which folder should be write to, filename and offset
 func getDetailFile(start uint32) (string, string, uint16) {
-	t := time.Unix(int64(start), 0)
-	year, month, day := t.Date()
-	hours := t.Hour()
+	encodedStart := encodeFileFromUnix(start)
 
-	fileName := strconv.Itoa(day)
-	fileOrigin := time.Date(year, month, day, 0, 0, 0, 0, time.Local).Unix()
-	if hours >= 12 {
-		fileOrigin = fileOrigin + 43200
-		fileName = fmt.Sprintf("%sp", fileName)
-	}
+	folder, fileName := encodedStart.path()
+	offset := start - encodedStart.origin()
 
-	offset := start - uint32(fileOrigin)
-	return filepath.Join(strconv.Itoa(year), strconv.Itoa(int(month))), fileName, uint16(offset)
+	return folder, fileName, uint16(offset)
 }
 
 func writeSlotToFile(folder string, file string, offset uint16, howlong uint32) error {
@@ -164,4 +165,34 @@ func appendToFile(fileName string, b []byte) error {
 
 	_, err = f.Write(b)
 	return err
+}
+
+// Only get target files that contain slots between start and end.
+// start, end should be unixtime
+func (db *TDB) getTargetFiles(target string, start, end uint32) ([]uint32, []string, error) {
+	if start != 0 && end != 0 && start > end {
+		return nil, nil, ErrRange
+	}
+
+	// tagHome, err := db.getTargetHome(target)
+	// if err != nil {
+	// 	return nil, nil, err
+	// }
+
+	var starts []uint32
+	var files []string
+
+	// if start == 0 {
+	// 	startTime = 0
+	// } else {
+	// 	startT := time.Unix(int64(start), 0)
+
+	// }
+
+	// if end == 0 {
+	// 	endTime = math.MaxFloat32
+	// } else {
+
+	// }
+	return starts, files, nil
 }
