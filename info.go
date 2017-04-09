@@ -28,7 +28,7 @@ func createInfo(p string) (*info, error) {
 		}
 		return one, err
 	} else if stat.IsDir() {
-		return one, ErrInfoFilePath
+		return one, ErrPathNotFile
 	}
 
 	err := one.loadInfo()
@@ -62,6 +62,18 @@ func (one *info) getValue(k string) []byte {
 	one.contentLock.RLock()
 	defer one.contentLock.RUnlock()
 	return one.content[k]
+}
+
+func (one *info) getKeys() []string {
+	var keys []string
+
+	one.contentLock.RLock()
+	defer one.contentLock.RUnlock()
+
+	for k := range one.content {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 // update the given keys, values content and write to file

@@ -34,6 +34,34 @@ func init() {
 	slotLocker = new(sync.RWMutex)
 }
 
+// AddSlot to add a slot to database
+func (db *TDB) AddSlot(target string, start, howlong uint32) error {
+	targetHome, err := db.getTargetHome(target)
+	if err != nil {
+		return err
+	}
+
+	folder, fileName, offset := getDetailFile(start)
+	fileFolder := filepath.Join(targetHome, folder)
+
+	return writeSlotToFile(fileFolder, fileName, offset, howlong)
+}
+
+// GetTargets to get all the targets
+func (db *TDB) GetTargets() []string {
+	return db.slot.getKeys()
+}
+
+// GetSlots to get all the slots for a target
+// return unix time and slots
+func (db *TDB) GetSlots(target string) (starts []uint32, slots []uint32) {
+	aliasName := string(db.slot.getValue(target))
+	if aliasName == "" {
+		return
+	}
+	return
+}
+
 func randBytes(n int) []byte {
 	b := make([]byte, n)
 	for i := range b {
@@ -69,18 +97,20 @@ func (db *TDB) getTargetHome(target string) (string, error) {
 		aliasName = string(randBytes(slotAliasLen))
 		targetHome = filepath.Join(db.path, slotsFolder, aliasName)
 
-		if stat, err := os.Stat(targetHome); err != nil {
-			if os.IsNotExist(err) {
-				// after successfully create the folder, break
-				if err := os.MkdirAll(targetHome, os.ModePerm); err != nil {
-					return "", err
-				}
-				break
-			} else {
+		// check whether this folder is exist
+		exist, err := checkFolderExist(targetHome)
+		if err != nil {
+			return "", err
+		}
+
+		// no exist, OK, create it.
+		if !exist {
+			err := createFolder(targetHome)
+			if err != nil {
 				return "", err
 			}
-		} else if !stat.IsDir() {
-			return "", ErrDBPathNotFolder
+			// successfully created the folder, BREAK
+			break
 		}
 	}
 	return targetHome, db.slot.updateInfo([]string{target}, [][]byte{[]byte(aliasName)})
@@ -104,46 +134,34 @@ func getDetailFile(start uint32) (string, string, uint16) {
 	return filepath.Join(strconv.Itoa(year), strconv.Itoa(int(month))), fileName, uint16(offset)
 }
 
-func writeSlotToFile(file string, offset uint16, howlong uint32) error {
-	// append to offset file
-	offsetFile := strings.Join([]string{file, offsetExt}, ".")
-	offsetF, err := os.OpenFile(offsetFile, os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
+func writeSlotToFile(folder string, file string, offset uint16, howlong uint32) error {
+	// create folder if not exist
+	if err := createFolder(folder); err != nil {
 		return err
 	}
-	defer offsetF.Close()
 
-	var b []byte
-	binary.LittleEndian.PutUint16(b, offset)
-	if _, err := offsetF.Write(b); err != nil {
+	// append to offset file
+	offsetFile := strings.Join([]string{file, offsetExt}, ".")
+	offsetB := make([]byte, 2)
+	binary.LittleEndian.PutUint16(offsetB, offset)
+	if err := appendToFile(filepath.Join(folder, offsetFile), offsetB); err != nil {
 		return err
 	}
 
 	// append to slot file
 	slotFile := strings.Join([]string{file, slotExt}, ".")
-	slotF, err := os.OpenFile(slotFile, os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer slotF.Close()
-
-	binary.LittleEndian.PutUint32(b, howlong)
-	if _, err := slotF.Write(b); err != nil {
-		return err
-	}
-
-	return nil
+	slotB := make([]byte, 4)
+	binary.LittleEndian.PutUint32(slotB, howlong)
+	return appendToFile(filepath.Join(folder, slotFile), slotB)
 }
 
-// AddSlot to add a slot to database
-func (db *TDB) AddSlot(target string, start, howlong uint32) error {
-	targetHome, err := db.getTargetHome(target)
+func appendToFile(fileName string, b []byte) error {
+	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
-	folder, fileName, offset := getDetailFile(start)
-	file := filepath.Join(targetHome, folder, fileName)
-
-	return writeSlotToFile(file, offset, howlong)
+	_, err = f.Write(b)
+	return err
 }

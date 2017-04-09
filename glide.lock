@@ -1,5 +1,5 @@
 hash: 9c05a1a444f8b9b629b031f2179c7d135d0bd57958159033095e1d6069b936bc
-updated: 2017-04-06T11:28:39.7993371+08:00
+updated: 2017-04-08T13:39:46.860778857+08:00
 imports:
 - name: github.com/drkaka/ulid
   version: a4078d88d430f7f5c443e60820664d0eef7a1cc8
@@ -13,7 +13,7 @@ testImports:
   subpackages:
   - spew
 - name: github.com/mattn/goveralls
-  version: 9d621f6940639bf287ecbb6f585a2c26eeba3bbe
+  version: a99c5ee06aeeca2a2befc7e90b99061b1180850c
 - name: github.com/pborman/uuid
   version: 1b00554d822231195d1babd97ff4a781231955c9
 - name: github.com/pmezard/go-difflib
@@ -25,6 +25,6 @@ testImports:
   subpackages:
   - assert
 - name: golang.org/x/tools
-  version: 5054e612afecd2460e8659117a716cb5b58d4b88
+  version: 24acc66eabead631b4e856255a9ad925549cee80
   subpackages:
   - cover

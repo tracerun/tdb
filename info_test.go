@@ -11,20 +11,14 @@ func TestInfoMethods(t *testing.T) {
 	// create a bad folder
 	folderPath := "bad_folder"
 
-	if _, err := os.Stat(folderPath); err != nil {
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
-				t.Error(err)
-			}
-		} else {
-			t.Fatal(err)
-		}
+	if err := createFolder(folderPath); err != nil {
+		t.Fatal(err)
 	}
 	defer os.RemoveAll(folderPath)
 
 	// creation on folder will fail
 	_, err := createInfo(folderPath)
-	assert.Equal(t, ErrInfoFilePath, err, "error should pop while creating info on a folder")
+	assert.Equal(t, ErrPathNotFile, err, "error should pop while creating info on a folder")
 
 	demoInfo := "demo_info"
 	defer os.Remove(demoInfo)
@@ -45,6 +39,10 @@ func TestInfoMethods(t *testing.T) {
 	// get a not existed value
 	value2 := one.getValue("not exist")
 	assert.Nil(t, value2, "should have nil value")
+
+	// get keys
+	keys := []string{key}
+	assert.EqualValues(t, keys, one.getKeys(), "keys not correct.")
 
 	// k, v length not equal
 	err = one.updateInfo([]string{key}, [][]byte{value, value})

@@ -1,9 +1,5 @@
 package tdb
 
-import (
-	"os"
-)
-
 // TDB is the entrance point.
 type TDB struct {
 	path string // the folder path used for tdb
@@ -16,16 +12,8 @@ type TDB struct {
 // "p" should be a path for folder, if not exist, create one.
 func Open(p string) (*TDB, error) {
 	db := &TDB{path: p}
-	if stat, err := os.Stat(p); err != nil {
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(p, os.ModePerm); err != nil {
-				return nil, err
-			}
-		} else {
-			return db, err
-		}
-	} else if !stat.IsDir() {
-		return db, ErrDBPathNotFolder
+	if err := createFolder(p); err != nil {
+		return nil, err
 	}
 
 	// load meta information

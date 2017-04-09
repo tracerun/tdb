@@ -1,10 +1,12 @@
 package tdb
 
 import (
-	"path/filepath"
-	"testing"
-
+	"fmt"
 	"os"
+	"path/filepath"
+	"strconv"
+	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -22,15 +24,31 @@ func BenchmarkRandBytes(b *testing.B) {
 func TestGetDetailFile(t *testing.T) {
 	folder, file, offset := getDetailFile(uint32(1491550758))
 
+	thisTime := time.Unix(int64(1491550758), 0)
+	_, _, day := thisTime.Date()
+	hours := thisTime.Hour()
+
+	thisDay := strconv.Itoa(day)
+
+	thisOffset := time.Date(2017, 4, day, 0, 0, 0, 0, time.Local).Unix()
+	if hours >= 12 {
+		thisDay = fmt.Sprintf("%sp", thisDay)
+		thisOffset = thisOffset + 43200
+	}
+
 	thisPath := filepath.Join("2017", "4")
 	assert.Equal(t, thisPath, folder, "folder is wrong")
-	assert.Equal(t, "7p", file, "file is wrong")
-	assert.Equal(t, uint16(13158), offset, "offset is wrong")
+	assert.Equal(t, thisDay, file, "file is wrong")
+	assert.Equal(t, uint16(1491550758-thisOffset), offset, "offset is wrong")
+}
 
-	folder, file, offset = getDetailFile(uint32(1491532758))
-	assert.Equal(t, thisPath, folder, "folder is wrong")
-	assert.Equal(t, "7", file, "file is wrong")
-	assert.Equal(t, uint16(38358), offset, "offset is wrong")
+func TestWriteSlotToFile(t *testing.T) {
+	folder := "test_write_slot"
+	file := "test"
+	defer os.RemoveAll(folder)
+
+	err := writeSlotToFile(folder, file, uint16(123), uint32(123))
+	assert.NoError(t, err, "append to file wrong")
 }
 
 func TestSlots(t *testing.T) {
@@ -45,12 +63,9 @@ func TestSlots(t *testing.T) {
 	targetHome, err := db.getTargetHome(target)
 	assert.NoError(t, err, "fail to get target home folder")
 
-	stat, err := os.Stat(targetHome)
+	exist, err := checkFolderExist(targetHome)
 	assert.NoError(t, err, "target home folder wrong")
-
-	if !stat.IsDir() {
-		t.Error("target home not a dir")
-	}
+	assert.True(t, exist, "target home folder should exist")
 
 	b := db.slot.getValue(target)
 	assert.Len(t, string(b), slotAliasLen, "alias name length wrong")
