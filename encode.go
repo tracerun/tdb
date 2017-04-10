@@ -65,7 +65,11 @@ type fileRange struct {
 
 // create a new fileRange instance
 // startUnix == 0 means from very beginning; endUnix == 0 means to very end.
-func newFileRange(startUnix uint32, endUnix uint32) *fileRange {
+func newFileRange(startUnix uint32, endUnix uint32) (*fileRange, error) {
+	if startUnix != 0 && endUnix != 0 && startUnix > endUnix {
+		return nil, ErrRange
+	}
+
 	one := &fileRange{
 		start: encodeFileFromUnix(startUnix),
 		end:   encodeFileFromUnix(endUnix),
@@ -78,7 +82,7 @@ func newFileRange(startUnix uint32, endUnix uint32) *fileRange {
 	if endUnix == 0 {
 		one.end = fileEncode(math.MaxUint32)
 	}
-	return one
+	return one, nil
 }
 
 // folder should be the year-month folder like "201703"
@@ -89,7 +93,7 @@ func (f *fileRange) folderInRange(folder string) (bool, error) {
 	}
 
 	t := uint32(v)
-	if t >= uint32(f.start) && t <= uint32(f.end) {
+	if t >= uint32(f.start/1000) && t <= uint32(f.end/1000) {
 		return true, nil
 	}
 	return false, nil

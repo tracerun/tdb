@@ -27,7 +27,32 @@ func TestFileEncode(t *testing.T) {
 }
 
 func TestFileRange(t *testing.T) {
-	fRange := newFileRange(0, 0)
+	fRange, err := newFileRange(0, 0)
+	assert.NoError(t, err, "error creating file range")
 	assert.Equal(t, fileEncode(0), fRange.start, "start should be 0")
 	assert.Equal(t, fileEncode(math.MaxUint32), fRange.end, "end should be the max uint32")
+
+	fRange, err = newFileRange(2, 1)
+	assert.Equal(t, ErrRange, err, "should have error when start > end")
+	assert.Nil(t, fRange, "filerange should be nil")
+
+	fRange, err = newFileRange(0, 0)
+	inRange, err := fRange.folderInRange("badfolder")
+	assert.False(t, inRange, "should not in range.")
+	assert.NotNil(t, err, "can't convert to int")
+
+	// from 201704 to 201902
+	fRange, err = newFileRange(1491134201, 1551134201)
+
+	inRange, err = fRange.folderInRange("201712")
+	assert.True(t, inRange, "should in range")
+	assert.NoError(t, err, "should have no error")
+
+	inRange, err = fRange.folderInRange("201903")
+	assert.False(t, inRange, "should not in range")
+	assert.NoError(t, err, "should have no error")
+
+	inRange, err = fRange.folderInRange("201705120")
+	assert.False(t, inRange, "should not in range")
+	assert.NoError(t, err, "should have no error")
 }

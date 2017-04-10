@@ -1,7 +1,6 @@
 package tdb
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -28,12 +27,13 @@ func TestGetDetailFile(t *testing.T) {
 	_, _, day := thisTime.Date()
 	hours := thisTime.Hour()
 
-	thisDay := strconv.Itoa(day)
-
+	var thisDay string
 	thisOffset := time.Date(2017, 4, day, 0, 0, 0, 0, time.Local).Unix()
 	if hours >= 12 {
-		thisDay = fmt.Sprintf("%s5", thisDay)
+		thisDay = strconv.Itoa(day*10 + 5)
 		thisOffset = thisOffset + 43200
+	} else {
+		thisDay = strconv.Itoa(day * 10)
 	}
 
 	assert.Equal(t, "201704", folder, "folder is wrong")
