@@ -1,8 +1,7 @@
 package tdb
 
 import (
-	"fmt"
-	"path/filepath"
+	"math"
 	"strconv"
 	"time"
 )
@@ -45,11 +44,8 @@ func (f fileEncode) isAM() bool {
 
 // get encoded folder and file name
 func (f fileEncode) path() (string, string) {
-	folder := filepath.Join(strconv.Itoa(f.year()), strconv.Itoa(f.month()))
-	fileName := strconv.Itoa(f.day())
-	if !f.isAM() {
-		fileName = fmt.Sprintf("%sp", fileName)
-	}
+	folder := strconv.Itoa(int(uint32(f) / 1e3))
+	fileName := strconv.Itoa(int(uint32(f) % 1e3))
 	return folder, fileName
 }
 
@@ -60,4 +56,41 @@ func (f fileEncode) origin() uint32 {
 		fileOrigin = fileOrigin + 43200
 	}
 	return uint32(fileOrigin)
+}
+
+type fileRange struct {
+	start fileEncode
+	end   fileEncode
+}
+
+// create a new fileRange instance
+// startUnix == 0 means from very beginning; endUnix == 0 means to very end.
+func newFileRange(startUnix uint32, endUnix uint32) *fileRange {
+	one := &fileRange{
+		start: encodeFileFromUnix(startUnix),
+		end:   encodeFileFromUnix(endUnix),
+	}
+	// set to 0 if startUnix == 0
+	if startUnix == 0 {
+		one.start = fileEncode(0)
+	}
+	// set to max uint32 if endUnix == 0
+	if endUnix == 0 {
+		one.end = fileEncode(math.MaxUint32)
+	}
+	return one
+}
+
+// folder should be the year-month folder like "201703"
+func (f *fileRange) folderInRange(folder string) (bool, error) {
+	v, err := strconv.Atoi(folder)
+	if err != nil {
+		return false, err
+	}
+
+	t := uint32(v)
+	if t >= uint32(f.start) && t <= uint32(f.end) {
+		return true, nil
+	}
+	return false, nil
 }

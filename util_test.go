@@ -15,9 +15,14 @@ func TestFolderActions(t *testing.T) {
 	assert.NoError(t, err, "should have no error")
 	assert.False(t, exist, "folder should not exist")
 
-	_, err = os.Create(demoFile)
+	var f *os.File
+	f, err = os.Create(demoFile)
 	if assert.NoError(t, err, "should have no error to create file") {
-		defer os.Remove(demoFile)
+		defer func() {
+			f.Close()
+			err := os.Remove(demoFile)
+			assert.NoError(t, err, "should have no error to delete file")
+		}()
 	}
 
 	exist, err = checkFolderExist(demoFile)
@@ -26,7 +31,10 @@ func TestFolderActions(t *testing.T) {
 
 	err = createFolder(demoFolder)
 	if assert.NoError(t, err, "should have no error to create folder") {
-		defer os.RemoveAll(demoFolder)
+		defer func() {
+			err := os.RemoveAll(demoFolder)
+			assert.NoError(t, err, "should have no error to delete folder")
+		}()
 	}
 
 	err = createFolder(demoFolder)
@@ -35,4 +43,8 @@ func TestFolderActions(t *testing.T) {
 	exist, err = checkFolderExist(demoFolder)
 	assert.NoError(t, err, "should have no error when path is a folder")
 	assert.True(t, exist, "should return true if folder exist")
+}
+
+func TestListFolders(t *testing.T) {
+
 }

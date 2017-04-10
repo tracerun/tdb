@@ -191,7 +191,7 @@ func (db *TDB) getTargetFiles(target string, start, end uint32) ([]uint32, []str
 
 	// if end == 0 {
 	// 	endTime = math.MaxFloat32
-	// } else {
+	// } else {0
 
 	// }
 	return starts, files, nil

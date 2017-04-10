@@ -1,6 +1,9 @@
 package tdb
 
-import "os"
+import (
+	"io/ioutil"
+	"os"
+)
 
 // checkFolderExist
 // return an error if folder is a file.
@@ -28,4 +31,20 @@ func createFolder(folder string) error {
 		err = os.MkdirAll(folder, os.ModePerm)
 	}
 	return err
+}
+
+// list all the folders in a given folder
+func listFolders(folder string) ([]string, error) {
+	files, err := ioutil.ReadDir(folder)
+	if err != nil {
+		return nil, err
+	}
+
+	var folders []string
+	for _, f := range files {
+		if f.IsDir() {
+			folders = append(folders, f.Name())
+		}
+	}
+	return folders, nil
 }

@@ -32,12 +32,11 @@ func TestGetDetailFile(t *testing.T) {
 
 	thisOffset := time.Date(2017, 4, day, 0, 0, 0, 0, time.Local).Unix()
 	if hours >= 12 {
-		thisDay = fmt.Sprintf("%sp", thisDay)
+		thisDay = fmt.Sprintf("%s5", thisDay)
 		thisOffset = thisOffset + 43200
 	}
 
-	thisPath := filepath.Join("2017", "4")
-	assert.Equal(t, thisPath, folder, "folder is wrong")
+	assert.Equal(t, "201704", folder, "folder is wrong")
 	assert.Equal(t, thisDay, file, "file is wrong")
 	assert.Equal(t, uint16(1491550758-thisOffset), offset, "offset is wrong")
 }

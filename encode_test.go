@@ -3,7 +3,7 @@ package tdb
 import (
 	"testing"
 
-	"path/filepath"
+	"math"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -22,6 +22,12 @@ func TestFileEncode(t *testing.T) {
 	assert.False(t, encoded.isAM(), "should be in pm")
 
 	folder, filename := encoded.path()
-	assert.Equal(t, filepath.Join("2017", "12"), folder, "folder is wrong")
-	assert.Equal(t, "1p", filename, "folder is wrong")
+	assert.Equal(t, "201712", folder, "folder is wrong")
+	assert.Equal(t, "15", filename, "folder is wrong")
+}
+
+func TestFileRange(t *testing.T) {
+	fRange := newFileRange(0, 0)
+	assert.Equal(t, fileEncode(0), fRange.start, "start should be 0")
+	assert.Equal(t, fileEncode(math.MaxUint32), fRange.end, "end should be the max uint32")
 }
