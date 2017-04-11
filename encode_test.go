@@ -1,9 +1,9 @@
 package tdb
 
 import (
-	"testing"
-
 	"math"
+	"sort"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +23,39 @@ func TestFileEncode(t *testing.T) {
 
 	folder, filename := encoded.path()
 	assert.Equal(t, "201712", folder, "folder is wrong")
-	assert.Equal(t, "15", filename, "folder is wrong")
+	assert.Equal(t, "015", filename, "folder is wrong")
+}
+
+func TestFileEncodeFromPath(t *testing.T) {
+	encoded, err := encodeFromPath("201705", "025.idx")
+	assert.NoError(t, err, "should have no error when encoding from path")
+	assert.Equal(t, fileEncode(201705025), encoded, "file encode wrong")
+
+	_, err = encodeFromPath("201705a", "025.idx")
+	assert.NotNil(t, err, "should have error when folder name length is not 6")
+
+	_, err = encodeFromPath("201705", "0025.idx")
+	assert.NotNil(t, err, "should have error when file name length is not 3")
+
+	_, err = encodeFromPath("20170a", "025.idx")
+	assert.NotNil(t, err, "bad folder name when encoding")
+
+	_, err = encodeFromPath("201705", "a25.idx")
+	assert.NotNil(t, err, "bad file name when encoding")
+}
+
+func TestSortingFileEncode(t *testing.T) {
+	var fileEncodes []fileEncode
+	fileEncodes = append(fileEncodes, fileEncode(3))
+	fileEncodes = append(fileEncodes, fileEncode(2))
+	fileEncodes = append(fileEncodes, fileEncode(1))
+
+	s := fileEncodeSlice(fileEncodes)
+	sort.Sort(s)
+
+	assert.Equal(t, fileEncode(1), fileEncodes[0], "first value wrong")
+	assert.Equal(t, fileEncode(2), fileEncodes[1], "second value wrong")
+	assert.Equal(t, fileEncode(3), fileEncodes[2], "third value wrong")
 }
 
 func TestFileRange(t *testing.T) {
@@ -41,9 +73,10 @@ func TestFileRange(t *testing.T) {
 	assert.False(t, inRange, "should not in range.")
 	assert.NotNil(t, err, "can't convert to int")
 
-	// from 201704 to 201902
+	// from 201704020 to 201902255 (UTC)
 	fRange, err = newFileRange(1491134201, 1551134201)
 
+	// test folder range
 	inRange, err = fRange.folderInRange("201712")
 	assert.True(t, inRange, "should in range")
 	assert.NoError(t, err, "should have no error")
@@ -55,4 +88,13 @@ func TestFileRange(t *testing.T) {
 	inRange, err = fRange.folderInRange("201705120")
 	assert.False(t, inRange, "should not in range")
 	assert.NoError(t, err, "should have no error")
+
+	// test file range
+	inRange, err = fRange.fileInRange(fileEncode(201801250))
+	assert.NoError(t, err, "should have no error")
+	assert.True(t, inRange, "should in range")
+
+	inRange, err = fRange.fileInRange(fileEncode(202001250))
+	assert.NoError(t, err, "should have no error")
+	assert.False(t, inRange, "should in range")
 }

@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"path/filepath"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,6 +47,7 @@ func TestFolderActions(t *testing.T) {
 	assert.True(t, exist, "should return true if folder exist")
 }
 
-func TestListFolders(t *testing.T) {
-
+func TestGetFileName(t *testing.T) {
+	fPath := filepath.Join("201702", "050.idx")
+	assert.Equal(t, "050", getFileName(fPath), "file name wrong")
 }

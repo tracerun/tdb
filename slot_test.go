@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,6 +36,10 @@ func TestGetDetailFile(t *testing.T) {
 		thisOffset = thisOffset + 43200
 	} else {
 		thisDay = strconv.Itoa(day * 10)
+	}
+
+	if len(thisDay) == 2 {
+		thisDay = fmt.Sprintf("0%s", thisDay)
 	}
 
 	assert.Equal(t, "201704", folder, "folder is wrong")
@@ -71,4 +77,23 @@ func TestSlots(t *testing.T) {
 
 	thisTargetHome := filepath.Join(db.path, slotsFolder, string(b))
 	assert.Equal(t, thisTargetHome, targetHome, "target home not correct")
+
+	// create slot1 and add it
+	start1 := uint32(1491134201) // 201704020 (UTC)
+	slot1 := uint32(20)          // 20 seconds
+	err = db.AddSlot(target, start1, slot1)
+	assert.NoError(t, err, "should have no error")
+
+	// create slot2 and add it
+	start2 := uint32(1551134201) // 201902255 (UTC)
+	slot2 := uint32(40)          // 40 seconds
+	err = db.AddSlot(target, start2, slot2)
+	assert.NoError(t, err, "should have no error")
+
+	targets := db.GetTargets()
+	assert.Len(t, targets, 1, "should have one target.")
+
+	files, err := db.getTargetFiles(target, 0, 0)
+	assert.NoError(t, err, "should have no error while get target files")
+	assert.Len(t, files, 2, "should have 2 slots")
 }

@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -19,8 +20,8 @@ const (
 	slotBytes    = 4
 	indexBytes   = 2
 
-	offsetExt = "idx"
-	slotExt   = "slt"
+	offsetExt = ".idx"
+	slotExt   = ".slt"
 )
 
 var (
@@ -142,7 +143,7 @@ func writeSlotToFile(folder string, file string, offset uint16, howlong uint32) 
 	}
 
 	// append to offset file
-	offsetFile := strings.Join([]string{file, offsetExt}, ".")
+	offsetFile := strings.Join([]string{file, offsetExt}, "")
 	offsetB := make([]byte, 2)
 	binary.LittleEndian.PutUint16(offsetB, offset)
 	if err := appendToFile(filepath.Join(folder, offsetFile), offsetB); err != nil {
@@ -150,7 +151,7 @@ func writeSlotToFile(folder string, file string, offset uint16, howlong uint32) 
 	}
 
 	// append to slot file
-	slotFile := strings.Join([]string{file, slotExt}, ".")
+	slotFile := strings.Join([]string{file, slotExt}, "")
 	slotB := make([]byte, 4)
 	binary.LittleEndian.PutUint32(slotB, howlong)
 	return appendToFile(filepath.Join(folder, slotFile), slotB)
@@ -169,30 +170,108 @@ func appendToFile(fileName string, b []byte) error {
 
 // Only get target files that contain slots between start and end.
 // start, end should be unixtime
-func (db *TDB) getTargetFiles(target string, start, end uint32) ([]uint32, []string, error) {
-	if start != 0 && end != 0 && start > end {
-		return nil, nil, ErrRange
+func (db *TDB) getTargetFiles(target string, start, end uint32) ([]fileEncode, error) {
+	tagHome, err := db.getTargetHome(target)
+	if err != nil {
+		return nil, err
 	}
 
-	// tagHome, err := db.getTargetHome(target)
-	// if err != nil {
-	// 	return nil, nil, err
-	// }
+	// create the range
+	fRange, err := newFileRange(start, end)
+	if err != nil {
+		return nil, err
+	}
 
-	var starts []uint32
-	var files []string
+	// get folders within the range
+	folders, err := getInRangeFolders(fRange, tagHome)
+	if err != nil {
+		return nil, err
+	}
 
-	// if start == 0 {
-	// 	startTime = 0
-	// } else {
-	// 	startT := time.Unix(int64(start), 0)
+	var fileEncodes []fileEncode
+	for _, folder := range folders {
+		files, err := getInRangeFiles(fRange, tagHome, folder)
+		if err != nil {
+			return nil, err
+		}
+		fileEncodes = append(fileEncodes, files...)
+	}
 
-	// }
+	return fileEncodes, nil
+}
 
-	// if end == 0 {
-	// 	endTime = math.MaxFloat32
-	// } else {0
+func getInRangeFolders(fRange *fileRange, targetHome string) ([]string, error) {
+	f, err := os.Open(targetHome)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
 
-	// }
-	return starts, files, nil
+	var fs []string
+
+	names, err := f.Readdirnames(0)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, n := range names {
+		// check whether this folder is in range
+		in, err := fRange.folderInRange(n)
+		if err != nil {
+			return nil, err
+		} else if in {
+			fs = append(fs, n)
+		}
+	}
+
+	// sort to ensure the strings in increasing order
+	if !sort.StringsAreSorted(fs) {
+		sort.Strings(fs)
+	}
+
+	return fs, err
+}
+
+// get sorted []fileEncode
+func getInRangeFiles(fRange *fileRange, path, folder string) ([]fileEncode, error) {
+	f, err := os.Open(filepath.Join(path, folder))
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var filesIn []fileEncode
+	names, err := f.Readdirnames(0)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, n := range names {
+		// check whether this file is in range
+		if filepath.Ext(n) != offsetExt {
+			continue
+		}
+
+		encoded, err := encodeFromPath(folder, n)
+		if err != nil {
+			return nil, err
+		}
+
+		in, err := fRange.fileInRange(encoded)
+		if err != nil {
+			return nil, err
+		}
+
+		if in {
+			filesIn = append(filesIn, encoded)
+		}
+	}
+
+	s := fileEncodeSlice(filesIn)
+
+	if !sort.IsSorted(s) {
+		sort.Sort(s)
+	}
+
+	return filesIn, nil
 }

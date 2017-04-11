@@ -1,8 +1,9 @@
 package tdb
 
 import (
-	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 // checkFolderExist
@@ -33,18 +34,7 @@ func createFolder(folder string) error {
 	return err
 }
 
-// list all the folders in a given folder
-func listFolders(folder string) ([]string, error) {
-	files, err := ioutil.ReadDir(folder)
-	if err != nil {
-		return nil, err
-	}
-
-	var folders []string
-	for _, f := range files {
-		if f.IsDir() {
-			folders = append(folders, f.Name())
-		}
-	}
-	return folders, nil
+func getFileName(fPath string) string {
+	baseName := filepath.Base(fPath)
+	return strings.TrimSuffix(baseName, filepath.Ext(baseName))
 }

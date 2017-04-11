@@ -1,8 +1,11 @@
 package tdb
 
 import (
+	"errors"
 	"math"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -26,6 +29,31 @@ func encodeFile(year, month, day, hour int) fileEncode {
 	return fileEncode(encoded)
 }
 
+func encodeFromPath(folder, filename string) (fileEncode, error) {
+	var encoded fileEncode
+
+	dir := filepath.Base(folder)
+	if len(dir) != 6 {
+		return encoded, errors.New("folder is wrong to encode")
+	}
+
+	fName := getFileName(filename)
+	if len(fName) != 3 {
+		return encoded, errors.New("filename is wrong to encode")
+	}
+
+	dirV, err := strconv.Atoi(dir)
+	if err != nil {
+		return encoded, err
+	}
+
+	fNameV, err := strconv.Atoi(fName)
+	if err != nil {
+		return encoded, err
+	}
+	return fileEncode(dirV*1e3 + fNameV), nil
+}
+
 func (f fileEncode) year() int {
 	return int(uint32(f) / 1e5)
 }
@@ -46,6 +74,9 @@ func (f fileEncode) isAM() bool {
 func (f fileEncode) path() (string, string) {
 	folder := strconv.Itoa(int(uint32(f) / 1e3))
 	fileName := strconv.Itoa(int(uint32(f) % 1e3))
+	if len(fileName) == 2 {
+		fileName = strings.Join([]string{"0", fileName}, "")
+	}
 	return folder, fileName
 }
 
@@ -57,6 +88,13 @@ func (f fileEncode) origin() uint32 {
 	}
 	return uint32(fileOrigin)
 }
+
+// implement the sort interface
+type fileEncodeSlice []fileEncode
+
+func (s fileEncodeSlice) Len() int           { return len(s) }
+func (s fileEncodeSlice) Less(i, j int) bool { return s[i] < s[j] }
+func (s fileEncodeSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 type fileRange struct {
 	start fileEncode
@@ -94,6 +132,15 @@ func (f *fileRange) folderInRange(folder string) (bool, error) {
 
 	t := uint32(v)
 	if t >= uint32(f.start/1000) && t <= uint32(f.end/1000) {
+		return true, nil
+	}
+	return false, nil
+}
+
+// file should be the file encoded format like "201702135"
+func (f *fileRange) fileInRange(file fileEncode) (bool, error) {
+	t := uint32(file)
+	if t >= uint32(f.start) && t <= uint32(f.end) {
 		return true, nil
 	}
 	return false, nil
