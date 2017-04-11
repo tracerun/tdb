@@ -49,7 +49,7 @@ func TestGetDetailFile(t *testing.T) {
 
 func TestWriteSlotToFile(t *testing.T) {
 	folder := "test_write_slot"
-	file := "test"
+	file := encodeFile(2017, 4, 11, 23)
 	defer os.RemoveAll(folder)
 
 	err := writeSlotToFile(folder, file, uint16(123), uint32(123))

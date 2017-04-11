@@ -96,6 +96,7 @@ func (s fileEncodeSlice) Len() int           { return len(s) }
 func (s fileEncodeSlice) Less(i, j int) bool { return s[i] < s[j] }
 func (s fileEncodeSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
+// fileRange used for query
 type fileRange struct {
 	start fileEncode
 	end   fileEncode

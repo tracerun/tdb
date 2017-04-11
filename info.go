@@ -65,11 +65,10 @@ func (one *info) getValue(k string) []byte {
 }
 
 func (one *info) getKeys() []string {
-	var keys []string
-
 	one.contentLock.RLock()
 	defer one.contentLock.RUnlock()
 
+	var keys []string
 	for k := range one.content {
 		keys = append(keys, k)
 	}

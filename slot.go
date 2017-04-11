@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -50,10 +51,9 @@ func (db *TDB) AddSlot(target string, start, howlong uint32) error {
 		return err
 	}
 
-	folder, fileName, offset := getDetailFile(start)
-	fileFolder := filepath.Join(targetHome, folder)
-
-	return writeSlotToFile(fileFolder, fileName, offset, howlong)
+	file := encodeFileFromUnix(start)
+	offset := start - file.origin()
+	return writeSlotToFile(targetHome, file, uint16(offset), howlong)
 }
 
 // GetTargets to get all the targets
@@ -136,14 +136,23 @@ func getDetailFile(start uint32) (string, string, uint16) {
 	return folder, fileName, uint16(offset)
 }
 
-func writeSlotToFile(folder string, file string, offset uint16, howlong uint32) error {
+// the file encode used currently
+func currentFileEncode() fileEncode {
+	now := time.Now().Unix()
+	return encodeFileFromUnix(uint32(now))
+}
+
+func writeSlotToFile(tagHome string, file fileEncode, offset uint16, howlong uint32) error {
+	path, fileName := file.path()
+
+	folder := filepath.Join(tagHome, path)
 	// create folder if not exist
 	if err := createFolder(folder); err != nil {
 		return err
 	}
 
 	// append to offset file
-	offsetFile := strings.Join([]string{file, offsetExt}, "")
+	offsetFile := strings.Join([]string{fileName, offsetExt}, "")
 	offsetB := make([]byte, 2)
 	binary.LittleEndian.PutUint16(offsetB, offset)
 	if err := appendToFile(filepath.Join(folder, offsetFile), offsetB); err != nil {
@@ -151,7 +160,7 @@ func writeSlotToFile(folder string, file string, offset uint16, howlong uint32) 
 	}
 
 	// append to slot file
-	slotFile := strings.Join([]string{file, slotExt}, "")
+	slotFile := strings.Join([]string{fileName, slotExt}, "")
 	slotB := make([]byte, 4)
 	binary.LittleEndian.PutUint32(slotB, howlong)
 	return appendToFile(filepath.Join(folder, slotFile), slotB)
@@ -268,7 +277,6 @@ func getInRangeFiles(fRange *fileRange, path, folder string) ([]fileEncode, erro
 	}
 
 	s := fileEncodeSlice(filesIn)
-
 	if !sort.IsSorted(s) {
 		sort.Sort(s)
 	}
