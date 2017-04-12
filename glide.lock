@@ -1,5 +1,5 @@
 hash: 57a2158dd95f9b3504618aa3b75b148cdd3fda06e5f6b60c51a7f87c7cf126a3
-updated: 2017-04-12T16:50:58.4366388+08:00
+updated: 2017-04-12T22:00:19.597897383+08:00
 imports:
 - name: github.com/drkaka/ulid
   version: a4078d88d430f7f5c443e60820664d0eef7a1cc8
@@ -8,14 +8,14 @@ imports:
   subpackages:
   - proto
 - name: github.com/tracerun/locker
-  version: 12a157ead9c9ca86d925cc024480d3a4016a013d
+  version: 3d6a08b077973af7fcd359a42568e518fc429dae
 testImports:
 - name: github.com/davecgh/go-spew
   version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
   subpackages:
   - spew
 - name: github.com/mattn/goveralls
-  version: 9d621f6940639bf287ecbb6f585a2c26eeba3bbe
+  version: a99c5ee06aeeca2a2befc7e90b99061b1180850c
 - name: github.com/pborman/uuid
   version: 1b00554d822231195d1babd97ff4a781231955c9
 - name: github.com/pmezard/go-difflib

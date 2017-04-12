@@ -8,16 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRandBytes(t *testing.T) {
-	assert.Len(t, randBytes(10), 10, "bytes length should be 10")
-}
-
-func BenchmarkRandBytes(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		randBytes(10)
-	}
-}
-
 func TestWriteSlotToFile(t *testing.T) {
 	folder := "test_write_slot"
 	file := encodeFile(2017, 4, 11, 23)
@@ -67,4 +57,22 @@ func TestSlots(t *testing.T) {
 	files, err := db.getTargetFiles(target, 0, 0)
 	assert.NoError(t, err, "should have no error while get target files")
 	assert.Len(t, files, 2, "should have 2 slots")
+
+	// create slot3 and add it
+	start3 := uint32(1491134202) // 201704020 (UTC)
+	slot3 := uint32(10)          // 10 seconds
+	err = db.AddSlot(target, start3, slot3)
+	assert.NoError(t, err, "should have no error")
+
+	starts, slots, err := db.GetAllSlots(target)
+	assert.NoError(t, err, "should have no error to get all slots")
+	assert.Len(t, starts, 2, "should have two files")
+	assert.Len(t, slots, 2, "should have two files")
+
+	assert.Equal(t, start1, starts[0][0], "start1 wrong")
+	assert.Equal(t, slot1, slots[0][0], "slot1 wrong")
+	assert.Equal(t, start3, starts[0][1], "start3 wrong")
+	assert.Equal(t, slot3, slots[0][1], "slot3 wrong")
+	assert.Equal(t, start2, starts[1][0], "start2 wrong")
+	assert.Equal(t, slot2, slots[1][0], "slot2 wrong")
 }

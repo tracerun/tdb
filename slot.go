@@ -2,22 +2,18 @@ package tdb
 
 import (
 	"encoding/binary"
-	"math/rand"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
-
-	"io"
 
 	"github.com/tracerun/locker"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
-	slotIndex   = "__slotindex__"
-	letterBytes = "0123456789abcdefghijklmnopqrstuvwxyz"
-	letterLen   = 36
+	slotIndex = "__slotindex__"
 
 	slotAliasLen = 6
 	slotsFolder  = "slots"
@@ -53,15 +49,32 @@ func (db *TDB) GetTargets() []string {
 	return db.slot.getKeys()
 }
 
-// GetSlots to get all the slots for a target
+// GetAllSlots to get all the slots for a target
 // return unix time and slots
-func (db *TDB) GetSlots(target string) (starts []uint32, slots []uint32, err error) {
+func (db *TDB) GetAllSlots(target string) ([][]uint32, [][]uint32, error) {
 	aliasName := string(db.slot.getValue(target))
 	if aliasName == "" {
-		return
+		return nil, nil, nil
 	}
 
-	return
+	files, err := db.getTargetFiles(target, 0, 0)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	aliasedHome := filepath.Join(db.path, aliasName)
+
+	var g errgroup.Group
+	starts := make([][]uint32, len(files))
+	slots := make([][]uint32, len(files))
+	for i, f := range files {
+		g.Go(func() error {
+			starts[i], slots[i], err = readFile(aliasedHome, f)
+			return err
+		})
+	}
+	err = g.Wait()
+	return starts, slots, err
 }
 
 func readFile(aliasedHome string, file fileEncode) ([]uint32, []uint32, error) {
@@ -79,12 +92,14 @@ func readFile(aliasedHome string, file fileEncode) ([]uint32, []uint32, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	defer idxFile.Close()
 
 	// open slot file
 	slotFile, err := os.Open(slotName)
 	if err != nil {
 		return nil, nil, err
 	}
+	defer slotFile.Close()
 
 	offsetB := make([]byte, 2)
 	slotB := make([]byte, 4)
@@ -119,14 +134,6 @@ func readFile(aliasedHome string, file fileEncode) ([]uint32, []uint32, error) {
 		slots = append(slots, slot)
 	}
 	return starts, slots, nil
-}
-
-func randBytes(n int) []byte {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(letterLen)]
-	}
-	return b
 }
 
 // load slot index from file
@@ -176,12 +183,6 @@ func (db *TDB) getAliasedHome(target string) (string, error) {
 		}
 	}
 	return aliasedHome, db.slot.updateInfo([]string{target}, [][]byte{[]byte(aliasName)})
-}
-
-// the file encode used currently
-func currentFileEncode() fileEncode {
-	now := time.Now().Unix()
-	return encodeFileFromUnix(uint32(now))
 }
 
 func writeSlotToFile(aliasedHome string, file fileEncode, offset uint16, howlong uint32) error {
