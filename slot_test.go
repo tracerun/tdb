@@ -36,7 +36,7 @@ func TestSlots(t *testing.T) {
 	defer os.RemoveAll(db.path)
 
 	target := "abc.edf"
-	targetHome, err := db.getTargetHome(target)
+	targetHome, err := db.getAliasedHome(target)
 	assert.NoError(t, err, "fail to get target home folder")
 
 	exist, err := checkFolderExist(targetHome)

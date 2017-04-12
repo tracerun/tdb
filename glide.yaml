@@ -4,6 +4,7 @@ import:
   subpackages:
   - proto
 - package: github.com/drkaka/ulid
+- package: github.com/tracerun/locker
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

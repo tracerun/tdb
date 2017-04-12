@@ -2,6 +2,7 @@ package tdb
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"path/filepath"
 	"strconv"
@@ -70,7 +71,7 @@ func (f fileEncode) isAM() bool {
 	return f%10 == 0
 }
 
-// get encoded folder and file name
+// get subFolder folder and file name
 func (f fileEncode) path() (string, string) {
 	folder := strconv.Itoa(int(uint32(f) / 1e3))
 	fileName := strconv.Itoa(int(uint32(f) % 1e3))
@@ -145,4 +146,8 @@ func (f *fileRange) fileInRange(file fileEncode) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func encodeAliasAndFile(folder string, file fileEncode) string {
+	return fmt.Sprintf("%s%d", filepath.Base(folder), file)
 }

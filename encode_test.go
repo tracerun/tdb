@@ -98,3 +98,9 @@ func TestFileRange(t *testing.T) {
 	assert.NoError(t, err, "should have no error")
 	assert.False(t, inRange, "should in range")
 }
+
+func TestEncodeAliasAndFile(t *testing.T) {
+	alias := "lkfj/abcdef"
+	file := fileEncode(201501205)
+	assert.Equal(t, "abcdef201501205", encodeAliasAndFile(alias, file), "encode wrong")
+}

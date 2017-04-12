@@ -7,8 +7,11 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
+
+	"io"
+
+	"github.com/tracerun/locker"
 )
 
 const (
@@ -26,23 +29,23 @@ const (
 )
 
 var (
-	slotLocker *sync.RWMutex
+	srcLocker *locker.Locker
 )
 
 func init() {
-	slotLocker = new(sync.RWMutex)
+	srcLocker = locker.New()
 }
 
 // AddSlot to add a slot to database
 func (db *TDB) AddSlot(target string, start, howlong uint32) error {
-	targetHome, err := db.getTargetHome(target)
+	aliasedHome, err := db.getAliasedHome(target)
 	if err != nil {
 		return err
 	}
 
 	file := encodeFileFromUnix(start)
 	offset := start - file.origin()
-	return writeSlotToFile(targetHome, file, uint16(offset), howlong)
+	return writeSlotToFile(aliasedHome, file, uint16(offset), howlong)
 }
 
 // GetTargets to get all the targets
@@ -52,12 +55,70 @@ func (db *TDB) GetTargets() []string {
 
 // GetSlots to get all the slots for a target
 // return unix time and slots
-func (db *TDB) GetSlots(target string) (starts []uint32, slots []uint32) {
+func (db *TDB) GetSlots(target string) (starts []uint32, slots []uint32, err error) {
 	aliasName := string(db.slot.getValue(target))
 	if aliasName == "" {
 		return
 	}
+
 	return
+}
+
+func readFile(aliasedHome string, file fileEncode) ([]uint32, []uint32, error) {
+	path, fileName := file.path()
+	baseName := filepath.Join(aliasedHome, path, fileName)
+
+	idxName := strings.Join([]string{baseName, offsetExt}, "")
+	slotName := strings.Join([]string{baseName, slotExt}, "")
+
+	unlock := srcLocker.ReadLock(encodeAliasAndFile(aliasedHome, file))
+	defer unlock()
+
+	// open offset index file
+	idxFile, err := os.Open(idxName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// open slot file
+	slotFile, err := os.Open(slotName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	offsetB := make([]byte, 2)
+	slotB := make([]byte, 4)
+
+	origin := file.origin()
+	var starts, slots []uint32
+	for {
+		// read offset with 2 bytes
+		n, err := idxFile.Read(offsetB)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, nil, err
+		}
+		if n != 2 {
+			return nil, nil, err
+		}
+		offset := binary.LittleEndian.Uint16(offsetB)
+
+		// read slot with 4 bytes
+		n, err = slotFile.Read(slotB)
+		if err != nil {
+			return nil, nil, err
+		}
+		if n != 4 {
+			return nil, nil, err
+		}
+		slot := binary.LittleEndian.Uint32(slotB)
+
+		starts = append(starts, origin+uint32(offset))
+		slots = append(slots, slot)
+	}
+	return starts, slots, nil
 }
 
 func randBytes(n int) []byte {
@@ -75,35 +136,38 @@ func (db *TDB) loadSlotIndex() error {
 	return err
 }
 
-// get home folder for the target
+// get aliased home folder for the target
 // If target is not exist, create it in the index and also create a folder for it.
-func (db *TDB) getTargetHome(target string) (string, error) {
-	slotLocker.RLock()
+func (db *TDB) getAliasedHome(target string) (string, error) {
 	b := db.slot.getValue(target)
-	slotLocker.RUnlock()
 	if b != nil {
 		return filepath.Join(db.path, slotsFolder, string(b)), nil
 	}
 
 	// not exist, create folder
-	slotLocker.Lock()
-	defer slotLocker.Unlock()
+	unlock := srcLocker.WriteLock(target)
+	defer unlock()
 
-	var targetHome string
+	b = db.slot.getValue(target)
+	if b != nil {
+		return filepath.Join(db.path, slotsFolder, string(b)), nil
+	}
+
+	var aliasedHome string
 	var aliasName string
 	for {
 		aliasName = string(randBytes(slotAliasLen))
-		targetHome = filepath.Join(db.path, slotsFolder, aliasName)
+		aliasedHome = filepath.Join(db.path, slotsFolder, aliasName)
 
 		// check whether this folder is exist
-		exist, err := checkFolderExist(targetHome)
+		exist, err := checkFolderExist(aliasedHome)
 		if err != nil {
 			return "", err
 		}
 
 		// no exist, OK, create it.
 		if !exist {
-			err := createFolder(targetHome)
+			err := createFolder(aliasedHome)
 			if err != nil {
 				return "", err
 			}
@@ -111,7 +175,7 @@ func (db *TDB) getTargetHome(target string) (string, error) {
 			break
 		}
 	}
-	return targetHome, db.slot.updateInfo([]string{target}, [][]byte{[]byte(aliasName)})
+	return aliasedHome, db.slot.updateInfo([]string{target}, [][]byte{[]byte(aliasName)})
 }
 
 // the file encode used currently
@@ -120,32 +184,35 @@ func currentFileEncode() fileEncode {
 	return encodeFileFromUnix(uint32(now))
 }
 
-func writeSlotToFile(tagHome string, file fileEncode, offset uint16, howlong uint32) error {
-	path, fileName := file.path()
+func writeSlotToFile(aliasedHome string, file fileEncode, offset uint16, howlong uint32) error {
+	subFolder, fileName := file.path()
 
-	folder := filepath.Join(tagHome, path)
+	fullFolder := filepath.Join(aliasedHome, subFolder)
 	// create folder if not exist
-	if err := createFolder(folder); err != nil {
+	if err := createFolder(fullFolder); err != nil {
 		return err
 	}
 
+	unlock := srcLocker.WriteLock(encodeAliasAndFile(aliasedHome, file))
+	defer unlock()
+
 	// append to offset file
-	offsetFile := strings.Join([]string{fileName, offsetExt}, "")
+	offsetFileName := strings.Join([]string{fileName, offsetExt}, "")
 	offsetB := make([]byte, 2)
 	binary.LittleEndian.PutUint16(offsetB, offset)
-	if err := appendToFile(filepath.Join(folder, offsetFile), offsetB); err != nil {
+	if err := appendToFile(filepath.Join(fullFolder, offsetFileName), offsetB); err != nil {
 		return err
 	}
 
 	// append to slot file
-	slotFile := strings.Join([]string{fileName, slotExt}, "")
+	slotFileName := strings.Join([]string{fileName, slotExt}, "")
 	slotB := make([]byte, 4)
 	binary.LittleEndian.PutUint32(slotB, howlong)
-	return appendToFile(filepath.Join(folder, slotFile), slotB)
+	return appendToFile(filepath.Join(fullFolder, slotFileName), slotB)
 }
 
-func appendToFile(fileName string, b []byte) error {
-	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
+func appendToFile(fullPath string, b []byte) error {
+	f, err := os.OpenFile(fullPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
@@ -158,7 +225,7 @@ func appendToFile(fileName string, b []byte) error {
 // Only get target files that contain slots between start and end.
 // start, end should be unixtime
 func (db *TDB) getTargetFiles(target string, start, end uint32) ([]fileEncode, error) {
-	tagHome, err := db.getTargetHome(target)
+	aliasedHome, err := db.getAliasedHome(target)
 	if err != nil {
 		return nil, err
 	}
@@ -170,14 +237,14 @@ func (db *TDB) getTargetFiles(target string, start, end uint32) ([]fileEncode, e
 	}
 
 	// get folders within the range
-	folders, err := getInRangeFolders(fRange, tagHome)
+	folders, err := getInRangeFolders(fRange, aliasedHome)
 	if err != nil {
 		return nil, err
 	}
 
 	var fileEncodes []fileEncode
 	for _, folder := range folders {
-		files, err := getInRangeFiles(fRange, tagHome, folder)
+		files, err := getInRangeFiles(fRange, aliasedHome, folder)
 		if err != nil {
 			return nil, err
 		}
@@ -187,8 +254,8 @@ func (db *TDB) getTargetFiles(target string, start, end uint32) ([]fileEncode, e
 	return fileEncodes, nil
 }
 
-func getInRangeFolders(fRange *fileRange, targetHome string) ([]string, error) {
-	f, err := os.Open(targetHome)
+func getInRangeFolders(fRange *fileRange, aliasedHome string) ([]string, error) {
+	f, err := os.Open(aliasedHome)
 	if err != nil {
 		return nil, err
 	}
@@ -220,8 +287,8 @@ func getInRangeFolders(fRange *fileRange, targetHome string) ([]string, error) {
 }
 
 // get sorted []fileEncode
-func getInRangeFiles(fRange *fileRange, path, folder string) ([]fileEncode, error) {
-	f, err := os.Open(filepath.Join(path, folder))
+func getInRangeFiles(fRange *fileRange, aliasedHome, subFolder string) ([]fileEncode, error) {
+	f, err := os.Open(filepath.Join(aliasedHome, subFolder))
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +306,7 @@ func getInRangeFiles(fRange *fileRange, path, folder string) ([]fileEncode, erro
 			continue
 		}
 
-		encoded, err := encodeFromPath(folder, n)
+		encoded, err := encodeFromPath(subFolder, n)
 		if err != nil {
 			return nil, err
 		}
