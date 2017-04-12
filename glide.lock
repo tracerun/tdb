@@ -1,5 +1,5 @@
-hash: 9c05a1a444f8b9b629b031f2179c7d135d0bd57958159033095e1d6069b936bc
-updated: 2017-04-08T13:39:46.860778857+08:00
+hash: aaedda81d1fa325b2a7f7ffb959dd459342f9f8141e2e1af046576b0d874973a
+updated: 2017-04-12T11:29:19.890918+08:00
 imports:
 - name: github.com/drkaka/ulid
   version: a4078d88d430f7f5c443e60820664d0eef7a1cc8
@@ -13,7 +13,7 @@ testImports:
   subpackages:
   - spew
 - name: github.com/mattn/goveralls
-  version: a99c5ee06aeeca2a2befc7e90b99061b1180850c
+  version: 9d621f6940639bf287ecbb6f585a2c26eeba3bbe
 - name: github.com/pborman/uuid
   version: 1b00554d822231195d1babd97ff4a781231955c9
 - name: github.com/pmezard/go-difflib
@@ -24,7 +24,15 @@ testImports:
   version: 4d4bfba8f1d1027c4fdbe371823030df51419987
   subpackages:
   - assert
+- name: golang.org/x/net
+  version: a6577fac2d73be281a500b310739095313165611
+  subpackages:
+  - context
+- name: golang.org/x/sync
+  version: 5a06fca2c336a4b2b2fcb45702e8c47621b2aa2c
+  subpackages:
+  - errgroup
 - name: golang.org/x/tools
-  version: 24acc66eabead631b4e856255a9ad925549cee80
+  version: 7ee420f17d7525d013c72c05ed371361a29895d3
   subpackages:
   - cover

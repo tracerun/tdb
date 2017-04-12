@@ -3,11 +3,7 @@ package tdb
 import (
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
-	"time"
-
-	"fmt"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -20,31 +16,6 @@ func BenchmarkRandBytes(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		randBytes(10)
 	}
-}
-
-func TestGetDetailFile(t *testing.T) {
-	folder, file, offset := getDetailFile(uint32(1491550758))
-
-	thisTime := time.Unix(int64(1491550758), 0)
-	_, _, day := thisTime.Date()
-	hours := thisTime.Hour()
-
-	var thisDay string
-	thisOffset := time.Date(2017, 4, day, 0, 0, 0, 0, time.Local).Unix()
-	if hours >= 12 {
-		thisDay = strconv.Itoa(day*10 + 5)
-		thisOffset = thisOffset + 43200
-	} else {
-		thisDay = strconv.Itoa(day * 10)
-	}
-
-	if len(thisDay) == 2 {
-		thisDay = fmt.Sprintf("0%s", thisDay)
-	}
-
-	assert.Equal(t, "201704", folder, "folder is wrong")
-	assert.Equal(t, thisDay, file, "file is wrong")
-	assert.Equal(t, uint16(1491550758-thisOffset), offset, "offset is wrong")
 }
 
 func TestWriteSlotToFile(t *testing.T) {

@@ -27,21 +27,10 @@ const (
 
 var (
 	slotLocker *sync.RWMutex
-	fileLocker *slotFileLocker
 )
-
-type slotFileLocker struct {
-	files map[string]*sync.RWMutex
-	lock  *sync.RWMutex
-}
 
 func init() {
 	slotLocker = new(sync.RWMutex)
-
-	fileLocker = &slotFileLocker{
-		files: make(map[string]*sync.RWMutex),
-		lock:  new(sync.RWMutex),
-	}
 }
 
 // AddSlot to add a slot to database
@@ -123,17 +112,6 @@ func (db *TDB) getTargetHome(target string) (string, error) {
 		}
 	}
 	return targetHome, db.slot.updateInfo([]string{target}, [][]byte{[]byte(aliasName)})
-}
-
-// start is a unixtime
-// return which folder should be write to, filename and offset
-func getDetailFile(start uint32) (string, string, uint16) {
-	encodedStart := encodeFileFromUnix(start)
-
-	folder, fileName := encodedStart.path()
-	offset := start - encodedStart.origin()
-
-	return folder, fileName, uint16(offset)
 }
 
 // the file encode used currently

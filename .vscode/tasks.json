@@ -14,7 +14,7 @@
         },
         {
             "taskName": "test",
-            "args": ["-v", "-cover", "-race"],
+            "args": ["-v", "-cover", "-race", "-timeout", "10s"],
             "isTestCommand": true
         }
     ]
