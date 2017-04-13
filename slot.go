@@ -62,13 +62,15 @@ func (db *TDB) GetAllSlots(target string) ([][]uint32, [][]uint32, error) {
 		return nil, nil, err
 	}
 
-	aliasedHome := filepath.Join(db.path, aliasName)
+	aliasedHome := filepath.Join(db.path, slotsFolder, aliasName)
 
 	var g errgroup.Group
 	starts := make([][]uint32, len(files))
 	slots := make([][]uint32, len(files))
 	for i, f := range files {
+		i, f := i, f
 		g.Go(func() error {
+			var err error
 			starts[i], slots[i], err = readFile(aliasedHome, f)
 			return err
 		})
