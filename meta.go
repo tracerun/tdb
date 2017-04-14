@@ -2,14 +2,13 @@ package tdb
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"os"
 	"os/user"
 	"path"
 	"runtime"
 	"time"
-
-	"encoding/binary"
 
 	"github.com/drkaka/ulid"
 )
