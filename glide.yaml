@@ -3,6 +3,11 @@ import:
 - package: github.com/golang/protobuf
   subpackages:
   - proto
+- package: golang.org/x/sync
+  subpackages:
+  - errgroup
+- package: github.com/drkaka/ulid
+- package: github.com/tracerun/locker
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

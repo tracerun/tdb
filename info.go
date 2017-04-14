@@ -28,15 +28,16 @@ func createInfo(p string) (*info, error) {
 		}
 		return one, err
 	} else if stat.IsDir() {
-		return one, ErrInfoFilePath
+		return one, ErrPathNotFile
 	}
 
-	err := one.loadContent()
+	err := one.loadInfo()
 
 	return one, err
 }
 
-func (one *info) loadContent() error {
+// loadInfo information from file.
+func (one *info) loadInfo() error {
 	one.contentLock.Lock()
 	defer one.contentLock.Unlock()
 
@@ -57,9 +58,31 @@ func (one *info) loadContent() error {
 	return nil
 }
 
-func (one *info) setContent(k []string, v [][]byte) error {
+func (one *info) getValue(k string) []byte {
+	one.contentLock.RLock()
+	defer one.contentLock.RUnlock()
+	return one.content[k]
+}
+
+func (one *info) getKeys() []string {
+	one.contentLock.RLock()
+	defer one.contentLock.RUnlock()
+
+	var keys []string
+	for k := range one.content {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// update the given keys, values content and write to file
+func (one *info) updateInfo(k []string, v [][]byte) error {
 	if len(k) != len(v) {
 		return errors.New("k, v length not equal")
+	}
+
+	if len(k) == 0 {
+		return nil
 	}
 
 	one.contentLock.Lock()
