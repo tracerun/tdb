@@ -13,9 +13,15 @@ const (
 // AddAction used to add actions to database
 func (db *TDB) AddAction(target string, active bool, ts uint32) error {
 	db.action.contentLock.Lock()
-	defer db.action.contentLock.Unlock()
 
-	return handleAction(db, target, active, ts)
+	err := handleAction(db, target, active, ts)
+	if err != nil {
+		db.action.contentLock.Unlock()
+		return err
+	}
+	db.action.contentLock.Unlock()
+
+	return db.action.writeToDisk()
 }
 
 // GetActions to get all actions.

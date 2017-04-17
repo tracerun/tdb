@@ -74,6 +74,14 @@ func BenchmarkUpdate10(b *testing.B) {
 	benchmarkUpdate(b, 10)
 }
 
+func BenchmarkLoad1000(b *testing.B) {
+	benchmarkLoad(b, 1000)
+}
+
+func BenchmarkUpdate1000(b *testing.B) {
+	benchmarkUpdate(b, 1000)
+}
+
 func benchmarkLoad(b *testing.B, count int) {
 	benchInfo := "bench_info_load"
 	defer os.Remove(benchInfo)

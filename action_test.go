@@ -21,6 +21,18 @@ func TestActions(t *testing.T) {
 	testCloseEarlier(t, db)
 	testCloseExpiredAction(t, db)
 	testLaterActiveAction(t, db)
+
+	// test load actions
+	db2, err := Open(folder)
+	if !assert.NoError(t, err, "should have no error") {
+		t.Fatal(err)
+	}
+
+	targets, allStarts, allLasts, err := db2.GetActions()
+	assert.NoError(t, err, "get all actions wrong")
+	assert.Len(t, targets, 1, "targets count wrong")
+	assert.Len(t, allStarts, 1, "starts count wrong")
+	assert.Len(t, allLasts, 1, "lasts count wrong")
 }
 
 func testNormalCloseAction(t *testing.T, db *TDB) {

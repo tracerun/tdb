@@ -88,6 +88,25 @@ func (one *info) getAllInfo() ([]string, [][]byte) {
 	return keys, values
 }
 
+func (one *info) writeToDisk() error {
+	one.contentLock.RLock()
+
+	var pbInfo Info
+	pbInfo.Fields = one.content
+
+	b, err := proto.Marshal(&pbInfo)
+	if err != nil {
+		one.contentLock.RUnlock()
+		return err
+	}
+	one.contentLock.RUnlock()
+
+	one.fileLock.Lock()
+	defer one.fileLock.Unlock()
+
+	return ioutil.WriteFile(one.path, b, 0644)
+}
+
 // update the given keys, values content and write to file
 func (one *info) updateInfo(k []string, v [][]byte) error {
 	if len(k) != len(v) {
@@ -102,17 +121,7 @@ func (one *info) updateInfo(k []string, v [][]byte) error {
 	for i := 0; i < len(k); i++ {
 		one.content[k[i]] = v[i]
 	}
-	var pbInfo Info
-	pbInfo.Fields = one.content
 	one.contentLock.Unlock()
 
-	b, err := proto.Marshal(&pbInfo)
-	if err != nil {
-		return err
-	}
-
-	one.fileLock.Lock()
-	defer one.fileLock.Unlock()
-
-	return ioutil.WriteFile(one.path, b, 0644)
+	return one.writeToDisk()
 }
