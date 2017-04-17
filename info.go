@@ -58,13 +58,13 @@ func (one *info) loadInfo() error {
 	return nil
 }
 
-func (one *info) getValue(k string) []byte {
+func (one *info) getInfoValue(k string) []byte {
 	one.contentLock.RLock()
 	defer one.contentLock.RUnlock()
 	return one.content[k]
 }
 
-func (one *info) getKeys() []string {
+func (one *info) getInfoKeys() []string {
 	one.contentLock.RLock()
 	defer one.contentLock.RUnlock()
 
@@ -73,6 +73,19 @@ func (one *info) getKeys() []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func (one *info) getAllInfo() ([]string, [][]byte) {
+	one.contentLock.RLock()
+	defer one.contentLock.RUnlock()
+
+	var keys []string
+	var values [][]byte
+	for k, v := range one.content {
+		keys = append(keys, k)
+		values = append(values, v)
+	}
+	return keys, values
 }
 
 // update the given keys, values content and write to file

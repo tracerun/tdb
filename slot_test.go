@@ -33,7 +33,7 @@ func TestSlots(t *testing.T) {
 	assert.NoError(t, err, "target home folder wrong")
 	assert.True(t, exist, "target home folder should exist")
 
-	b := db.slot.getValue(target)
+	b := db.slot.getInfoValue(target)
 	assert.Len(t, string(b), slotAliasLen, "alias name length wrong")
 
 	thisTargetHome := filepath.Join(db.path, slotsFolder, string(b))

@@ -46,13 +46,13 @@ func (db *TDB) AddSlot(target string, start, howlong uint32) error {
 
 // GetTargets to get all the targets
 func (db *TDB) GetTargets() []string {
-	return db.slot.getKeys()
+	return db.slot.getInfoKeys()
 }
 
 // GetAllSlots to get all the slots for a target
 // return unix time and slots
 func (db *TDB) GetAllSlots(target string) ([][]uint32, [][]uint32, error) {
-	aliasName := string(db.slot.getValue(target))
+	aliasName := string(db.slot.getInfoValue(target))
 	if aliasName == "" {
 		return nil, nil, nil
 	}
@@ -148,7 +148,7 @@ func (db *TDB) loadSlotIndex() error {
 // get aliased home folder for the target
 // If target is not exist, create it in the index and also create a folder for it.
 func (db *TDB) getAliasedHome(target string) (string, error) {
-	b := db.slot.getValue(target)
+	b := db.slot.getInfoValue(target)
 	if b != nil {
 		return filepath.Join(db.path, slotsFolder, string(b)), nil
 	}
@@ -157,7 +157,7 @@ func (db *TDB) getAliasedHome(target string) (string, error) {
 	unlock := srcLocker.WriteLock(target)
 	defer unlock()
 
-	b = db.slot.getValue(target)
+	b = db.slot.getInfoValue(target)
 	if b != nil {
 		return filepath.Join(db.path, slotsFolder, string(b)), nil
 	}

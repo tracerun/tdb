@@ -33,16 +33,23 @@ func TestInfoMethods(t *testing.T) {
 	assert.Len(t, one.content, 1, "should have one content")
 
 	// get value
-	value1 := one.getValue(key)
+	value1 := one.getInfoValue(key)
 	assert.EqualValues(t, value, value1, "get value wrong")
 
 	// get a not existed value
-	value2 := one.getValue("not exist")
+	value2 := one.getInfoValue("not exist")
 	assert.Nil(t, value2, "should have nil value")
 
 	// get keys
 	keys := []string{key}
-	assert.EqualValues(t, keys, one.getKeys(), "keys not correct.")
+	assert.EqualValues(t, keys, one.getInfoKeys(), "keys not correct.")
+
+	// get all
+	allKeys := []string{key}
+	allValues := [][]byte{value}
+	keysResult, valuesResult := one.getAllInfo()
+	assert.EqualValues(t, allKeys, keysResult, "keys not correct.")
+	assert.EqualValues(t, allValues, valuesResult, "values not correct.")
 
 	// k, v length not equal
 	err = one.updateInfo([]string{key}, [][]byte{value, value})

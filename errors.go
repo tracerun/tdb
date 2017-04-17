@@ -13,4 +13,6 @@ var (
 	ErrNotExist = errors.New("not exist")
 	// ErrRange the range is wrong
 	ErrRange = errors.New("range is wrong")
+	// ErrActionValue error for action value field
+	ErrActionValue = errors.New("action value bytes wrong")
 )
