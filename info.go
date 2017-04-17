@@ -58,13 +58,13 @@ func (one *info) loadInfo() error {
 	return nil
 }
 
-func (one *info) getValue(k string) []byte {
+func (one *info) getInfoValue(k string) []byte {
 	one.contentLock.RLock()
 	defer one.contentLock.RUnlock()
 	return one.content[k]
 }
 
-func (one *info) getKeys() []string {
+func (one *info) getInfoKeys() []string {
 	one.contentLock.RLock()
 	defer one.contentLock.RUnlock()
 
@@ -73,6 +73,38 @@ func (one *info) getKeys() []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func (one *info) getAllInfo() ([]string, [][]byte) {
+	one.contentLock.RLock()
+	defer one.contentLock.RUnlock()
+
+	var keys []string
+	var values [][]byte
+	for k, v := range one.content {
+		keys = append(keys, k)
+		values = append(values, v)
+	}
+	return keys, values
+}
+
+func (one *info) writeToDisk() error {
+	one.contentLock.RLock()
+
+	var pbInfo Info
+	pbInfo.Fields = one.content
+
+	b, err := proto.Marshal(&pbInfo)
+	if err != nil {
+		one.contentLock.RUnlock()
+		return err
+	}
+	one.contentLock.RUnlock()
+
+	one.fileLock.Lock()
+	defer one.fileLock.Unlock()
+
+	return ioutil.WriteFile(one.path, b, 0644)
 }
 
 // update the given keys, values content and write to file
@@ -89,17 +121,7 @@ func (one *info) updateInfo(k []string, v [][]byte) error {
 	for i := 0; i < len(k); i++ {
 		one.content[k[i]] = v[i]
 	}
-	var pbInfo Info
-	pbInfo.Fields = one.content
 	one.contentLock.Unlock()
 
-	b, err := proto.Marshal(&pbInfo)
-	if err != nil {
-		return err
-	}
-
-	one.fileLock.Lock()
-	defer one.fileLock.Unlock()
-
-	return ioutil.WriteFile(one.path, b, 0644)
+	return one.writeToDisk()
 }

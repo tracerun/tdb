@@ -4,8 +4,9 @@ package tdb
 type TDB struct {
 	path string // the folder path used for tdb
 
-	slot *info // slot index info
-	meta *info // meta info
+	slot   *info // slot index info
+	meta   *info // meta info
+	action *info // record actions
 }
 
 // Open creates an instance of TDB.
@@ -23,6 +24,11 @@ func Open(p string) (*TDB, error) {
 
 	// load slot index
 	if err := db.loadSlotIndex(); err != nil {
+		return nil, err
+	}
+
+	// load action index
+	if err := db.loadActionIndex(); err != nil {
 		return nil, err
 	}
 

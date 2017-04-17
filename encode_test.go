@@ -5,6 +5,8 @@ import (
 	"sort"
 	"testing"
 
+	"time"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -103,4 +105,22 @@ func TestEncodeAliasAndFile(t *testing.T) {
 	alias := "lkfj/abcdef"
 	file := fileEncode(201501205)
 	assert.Equal(t, "abcdef201501205", encodeAliasAndFile(alias, file), "encode wrong")
+}
+
+func TestActionEncoding(t *testing.T) {
+	start := uint32(time.Now().Unix())
+	last := start + uint32(5)
+
+	bs := encodeAction(start, last)
+
+	thisStart, thisLast, err := decodeAction(bs)
+
+	assert.NoError(t, err, "should not have error")
+	assert.Equal(t, start, thisStart, "action start wrong")
+	assert.Equal(t, last, thisLast, "action last wrong")
+
+	// length wrong
+	bs = []byte("ab")
+	_, _, err = decodeAction(bs)
+	assert.Equal(t, ErrActionValue, err, "action bytes should be wrong.")
 }

@@ -1,6 +1,7 @@
 package tdb
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -150,4 +151,21 @@ func (f *fileRange) fileInRange(file fileEncode) (bool, error) {
 
 func encodeAliasAndFile(folder string, file fileEncode) string {
 	return fmt.Sprintf("%s%d", filepath.Base(folder), file)
+}
+
+func encodeAction(start, last uint32) []byte {
+	// bytes value: first 4 bytes is uint32 for last active, last 4 bytes for uint32 start.
+	bs := make([]byte, 8)
+	// encode to bs with start timestamp
+	binary.LittleEndian.PutUint32(bs[4:], start)
+	// encode to bs with last active timestamp
+	binary.LittleEndian.PutUint32(bs[0:], last)
+	return bs
+}
+
+func decodeAction(v []byte) (uint32, uint32, error) {
+	if len(v) != 8 {
+		return 0, 0, ErrActionValue
+	}
+	return binary.LittleEndian.Uint32(v[4:]), binary.LittleEndian.Uint32(v), nil
 }
