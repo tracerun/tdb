@@ -33,6 +33,8 @@ func TestActions(t *testing.T) {
 	assert.Len(t, targets, 1, "targets count wrong")
 	assert.Len(t, allStarts, 1, "starts count wrong")
 	assert.Len(t, allLasts, 1, "lasts count wrong")
+
+	testCheckEXP(t, db)
 }
 
 func testNormalCloseAction(t *testing.T, db *TDB) {
@@ -133,4 +135,29 @@ func testLaterActiveAction(t *testing.T, db *TDB) {
 	assert.Len(t, targets, 1, "targets count wrong")
 	assert.Len(t, allStarts, 1, "starts count wrong")
 	assert.Len(t, allLasts, 1, "lasts count wrong")
+}
+
+func testCheckEXP(t *testing.T, db *TDB) {
+	var keys []string
+	for k := range db.action.content {
+		keys = append(keys, k)
+	}
+	for i := 0; i < len(keys); i++ {
+		delete(db.action.content, keys[i])
+	}
+
+	target := string(randBytes(6))
+	now := uint32(time.Now().Unix())
+
+	err := db.AddAction(target, true, now-actionExp-2)
+	assert.NoError(t, err, "error add an action")
+
+	err = db.CheckExpirations()
+	assert.NoError(t, err, "error check expiration")
+
+	targets, allStarts, allLasts, err := db.GetActions()
+	assert.NoError(t, err, "get all actions wrong")
+	assert.Len(t, targets, 0, "targets count wrong")
+	assert.Len(t, allStarts, 0, "starts count wrong")
+	assert.Len(t, allLasts, 0, "lasts count wrong")
 }

@@ -2,6 +2,7 @@ package tdb
 
 import (
 	"path/filepath"
+	"time"
 )
 
 const (
@@ -42,6 +43,35 @@ func (db *TDB) GetActions() ([]string, []uint32, []uint32, error) {
 		lasts = append(lasts, last)
 	}
 	return targets, starts, lasts, nil
+}
+
+// CheckExpirations to check expired actions
+func (db *TDB) CheckExpirations() error {
+	targets, starts, lasts, err := db.GetActions()
+	if err != nil {
+		return err
+	}
+
+	changed := false
+	now := uint32(time.Now().Unix())
+
+	db.action.contentLock.Lock()
+	for i := 0; i < len(lasts); i++ {
+		if now-lasts[i] > actionExp {
+			changed = true
+			if err := db.AddSlot(targets[i], starts[i], lasts[i]-starts[i]); err != nil {
+				db.action.contentLock.Unlock()
+				return err
+			}
+			delete(db.action.content, targets[i])
+		}
+	}
+	db.action.contentLock.Unlock()
+
+	if changed {
+		return db.action.writeToDisk()
+	}
+	return nil
 }
 
 func handleAction(db *TDB, target string, active bool, ts uint32) error {
