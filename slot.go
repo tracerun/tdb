@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 
+	"math"
+
 	"github.com/tracerun/locker"
 	"golang.org/x/sync/errgroup"
 )
@@ -49,15 +51,15 @@ func (db *TDB) GetTargets() []string {
 	return db.slot.getInfoKeys()
 }
 
-// GetAllSlots to get all the slots for a target
+// GetSlots to get slots of a target in certain range
 // return unix time and slots
-func (db *TDB) GetAllSlots(target string) ([][]uint32, [][]uint32, error) {
+func (db *TDB) GetSlots(target string, start, end uint32) ([][]uint32, [][]uint32, error) {
 	aliasName := string(db.slot.getInfoValue(target))
 	if aliasName == "" {
 		return nil, nil, nil
 	}
 
-	files, err := db.getTargetFiles(target, 0, 0)
+	files, err := db.getTargetFiles(target, start, end)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -67,11 +69,27 @@ func (db *TDB) GetAllSlots(target string) ([][]uint32, [][]uint32, error) {
 	var g errgroup.Group
 	starts := make([][]uint32, len(files))
 	slots := make([][]uint32, len(files))
+
+	realStart := start
+	readEnd := end
+	if readEnd == 0 {
+		readEnd = math.MaxUint32
+	}
+
 	for i, f := range files {
 		i, f := i, f
 		g.Go(func() error {
-			var err error
-			starts[i], slots[i], err = readFile(aliasedHome, f)
+			var startsResult, slotsResult []uint32
+			thisStarts, thisSlots, err := readFile(aliasedHome, f)
+
+			// get the in range results
+			for i := 0; i < len(thisStarts); i++ {
+				if thisStarts[i] >= realStart && thisStarts[i] <= readEnd {
+					startsResult = append(startsResult, thisStarts[i])
+					slotsResult = append(slotsResult, thisSlots[i])
+				}
+			}
+			starts[i], slots[i] = startsResult, slotsResult
 			return err
 		})
 	}

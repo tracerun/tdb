@@ -64,7 +64,23 @@ func TestSlots(t *testing.T) {
 	err = db.AddSlot(target, start3, slot3)
 	assert.NoError(t, err, "should have no error")
 
-	starts, slots, err := db.GetAllSlots(target)
+	// get slots with bad range
+	_, _, err = db.GetSlots(target, 20, 10)
+	assert.Equal(t, ErrRange, err, "range should be wrong")
+
+	// get one
+	starts, slots, err := db.GetSlots(target, 1491134203, 0)
+	assert.NoError(t, err, "should have no error to get all slots")
+	assert.Len(t, starts, 2, "should have two files")
+	assert.Len(t, slots, 2, "should have two files")
+
+	assert.Len(t, starts[0], 0, "should have no slot")
+	assert.Len(t, slots[0], 0, "should have no slot")
+	assert.Len(t, starts[1], 1, "should have one slot")
+	assert.Len(t, slots[1], 1, "should have one slot")
+
+	// get all slots
+	starts, slots, err = db.GetSlots(target, 0, 0)
 	assert.NoError(t, err, "should have no error to get all slots")
 	assert.Len(t, starts, 2, "should have two files")
 	assert.Len(t, slots, 2, "should have two files")

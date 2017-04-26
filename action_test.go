@@ -48,7 +48,7 @@ func testNormalCloseAction(t *testing.T, db *TDB) {
 	db.AddAction(target, true, now)
 	db.AddAction(target, false, now+2)
 
-	starts, howlongs, err := db.GetAllSlots(target)
+	starts, howlongs, err := db.GetSlots(target, 0, 0)
 	assert.NoError(t, err, "get slots wrong")
 	assert.Len(t, starts, 1, "starts count wrong")
 	assert.Len(t, howlongs, 1, "howlong count wrong")
@@ -64,7 +64,7 @@ func testSingleCloseAction(t *testing.T, db *TDB) {
 	// single close action
 	db.AddAction(target, false, now)
 
-	starts, howlongs, err := db.GetAllSlots(target)
+	starts, howlongs, err := db.GetSlots(target, 0, 0)
 	assert.NoError(t, err, "get slots wrong")
 	assert.Len(t, starts, 1, "starts count wrong")
 	assert.Len(t, howlongs, 1, "howlong count wrong")
@@ -82,7 +82,7 @@ func testCloseEarlier(t *testing.T, db *TDB) {
 	db.AddAction(target, true, now+3)
 	db.AddAction(target, false, now+2)
 
-	starts, howlongs, err := db.GetAllSlots(target)
+	starts, howlongs, err := db.GetSlots(target, 0, 0)
 	assert.NoError(t, err, "get slots wrong")
 	assert.Len(t, starts, 1, "starts count wrong")
 	assert.Len(t, howlongs, 1, "howlong count wrong")
@@ -99,7 +99,7 @@ func testCloseExpiredAction(t *testing.T, db *TDB) {
 	db.AddAction(target, true, now)
 	db.AddAction(target, false, now+17)
 
-	starts, howlongs, err := db.GetAllSlots(target)
+	starts, howlongs, err := db.GetSlots(target, 0, 0)
 	assert.NoError(t, err, "get slots wrong")
 	assert.Len(t, starts[0], 2, "starts count wrong")
 	assert.Len(t, howlongs[0], 2, "howlong count wrong")
@@ -125,7 +125,7 @@ func testLaterActiveAction(t *testing.T, db *TDB) {
 	db.AddAction(target, true, now)
 	db.AddAction(target, true, now+17)
 
-	starts, howlongs, err := db.GetAllSlots(target)
+	starts, howlongs, err := db.GetSlots(target, 0, 0)
 	assert.NoError(t, err, "get slots wrong")
 	assert.Len(t, starts[0], 1, "starts count wrong")
 	assert.Len(t, howlongs[0], 1, "howlong count wrong")
