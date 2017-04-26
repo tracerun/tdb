@@ -34,7 +34,10 @@ func TestActions(t *testing.T) {
 	assert.Len(t, allStarts, 1, "starts count wrong")
 	assert.Len(t, allLasts, 1, "lasts count wrong")
 
+	// after test, should have no item
 	testCheckEXP(t, db)
+
+	testReloadEmptyInfo(t, folder)
 }
 
 func testNormalCloseAction(t *testing.T, db *TDB) {
@@ -160,4 +163,18 @@ func testCheckEXP(t *testing.T, db *TDB) {
 	assert.Len(t, targets, 0, "targets count wrong")
 	assert.Len(t, allStarts, 0, "starts count wrong")
 	assert.Len(t, allLasts, 0, "lasts count wrong")
+}
+
+func testReloadEmptyInfo(t *testing.T, folder string) {
+	db, err := Open(folder)
+	if !assert.NoError(t, err, "should have no error") {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(folder)
+
+	target := string(randBytes(6))
+	now := uint32(time.Now().Unix())
+
+	err = db.AddAction(target, true, now)
+	assert.NoError(t, err, "error add an action")
 }
