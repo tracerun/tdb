@@ -53,7 +53,9 @@ func (one *info) loadInfo() error {
 		return err
 	}
 
-	one.content = pbInfo.Fields
+	if pbInfo.Fields != nil {
+		one.content = pbInfo.Fields
+	}
 
 	return nil
 }
