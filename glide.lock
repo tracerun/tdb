@@ -1,14 +1,29 @@
-hash: 9a15fec9a582da416c578cf88651edde1ee74b87efe6cd4e1b4716f73b7b7e99
-updated: 2017-04-24T12:20:28.2983702+08:00
+hash: 6f6742f558404b1e977bb321d47b9f41945e405135dc05efaff3e12a14c3d370
+updated: 2017-04-27T11:41:05.2920481+08:00
 imports:
+- name: github.com/drkaka/lg
+  version: 699b294366df5a3f4ed00c92ed3200acde983a50
 - name: github.com/drkaka/ulid
   version: a4078d88d430f7f5c443e60820664d0eef7a1cc8
 - name: github.com/golang/protobuf
   version: c9c7427a2a70d2eb3bafa0ab2dc163e45f143317
   subpackages:
   - proto
+- name: github.com/satori/go.uuid
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/tracerun/locker
   version: 3d6a08b077973af7fcd359a42568e518fc429dae
+- name: go.uber.org/atomic
+  version: 4e336646b2ef9fc6e47be8e21594178f98e5ebcf
+- name: go.uber.org/zap
+  version: 6a4e056f2cc954cfec3581729e758909604b3f76
+  subpackages:
+  - buffer
+  - internal/bufferpool
+  - internal/color
+  - internal/exit
+  - internal/multierror
+  - zapcore
 - name: golang.org/x/net
   version: a6577fac2d73be281a500b310739095313165611
   subpackages:
@@ -35,6 +50,6 @@ testImports:
   subpackages:
   - assert
 - name: golang.org/x/tools
-  version: c853fd576988aeebd3665f6224972f1379960013
+  version: 3aa1caa08a9813c4635689965b58bd050828f0bf
   subpackages:
   - cover

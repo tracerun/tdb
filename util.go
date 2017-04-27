@@ -5,6 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/drkaka/lg"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -52,4 +55,10 @@ func createFolder(folder string) error {
 func getFileName(fPath string) string {
 	baseName := filepath.Base(fPath)
 	return strings.TrimSuffix(baseName, filepath.Ext(baseName))
+}
+
+func p(msg string, fields ...zapcore.Field) {
+	if lg.L(nil) != nil {
+		lg.L(nil).Debug(msg, fields...)
+	}
 }

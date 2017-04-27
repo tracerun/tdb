@@ -3,12 +3,13 @@ package tdb
 import (
 	"encoding/binary"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"math"
+	"go.uber.org/zap"
 
 	"github.com/tracerun/locker"
 	"golang.org/x/sync/errgroup"
@@ -81,7 +82,7 @@ func (db *TDB) GetSlots(target string, start, end uint32) ([][]uint32, [][]uint3
 		g.Go(func() error {
 			var startsResult, slotsResult []uint32
 			thisStarts, thisSlots, err := readFile(aliasedHome, f)
-
+			p("one file", zap.String("alias", aliasName), zap.Any("starts", thisStarts))
 			// get the in range results
 			for i := 0; i < len(thisStarts); i++ {
 				if thisStarts[i] >= realStart && thisStarts[i] <= readEnd {
