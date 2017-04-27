@@ -3,6 +3,8 @@ package tdb
 import (
 	"path/filepath"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 const (
@@ -12,10 +14,10 @@ const (
 )
 
 // AddAction used to add actions to database
-func (db *TDB) AddAction(target string, active bool, ts uint32) error {
+func (db *TDB) AddAction(target string, ts uint32) error {
 	db.action.contentLock.Lock()
 
-	err := handleAction(db, target, active, ts)
+	err := handleAction(db, target, ts)
 	if err != nil {
 		db.action.contentLock.Unlock()
 		return err
@@ -59,6 +61,7 @@ func (db *TDB) CheckExpirations() error {
 	for i := 0; i < len(lasts); i++ {
 		if now-lasts[i] > actionExp {
 			changed = true
+			p("expired action", zap.String("target", targets[i]))
 			if err := db.AddSlot(targets[i], starts[i], lasts[i]-starts[i]); err != nil {
 				db.action.contentLock.Unlock()
 				return err
@@ -74,48 +77,29 @@ func (db *TDB) CheckExpirations() error {
 	return nil
 }
 
-func handleAction(db *TDB, target string, active bool, ts uint32) error {
+func handleAction(db *TDB, target string, ts uint32) error {
 	actions := db.action.content
-	v := actions[target]
-	if v == nil {
-		if active {
-			actions[target] = encodeAction(ts, ts+1)
-			return nil
-		}
-		return db.AddSlot(target, ts, uint32(1))
+	v, ok := actions[target]
+	if !ok {
+		p("new action")
+		actions[target] = encodeAction(ts, ts+1)
+		return nil
 	}
 	start, last, err := decodeAction(v)
 	if err != nil {
 		return err
 	}
 
-	if active {
+	if ts > last {
 		if ts-last > actionExp {
+			p("new slot", zap.Uint32("ts", ts), zap.Uint32("last", last))
 			if err := db.AddSlot(target, start, last-start); err != nil {
 				return err
 			}
 			actions[target] = encodeAction(ts, ts+1)
-		} else if ts > last {
+		} else {
 			actions[target] = encodeAction(start, ts)
 		}
-	} else {
-		if ts-last > actionExp {
-			if err := db.AddSlot(target, start, last-start); err != nil {
-				return err
-			}
-			if err := db.AddSlot(target, ts, uint32(1)); err != nil {
-				return err
-			}
-		} else {
-			howlong := ts - start
-			if ts < last {
-				howlong = last - start
-			}
-			if err := db.AddSlot(target, start, howlong); err != nil {
-				return err
-			}
-		}
-		delete(actions, target)
 	}
 	return nil
 }

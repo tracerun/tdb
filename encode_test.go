@@ -4,7 +4,6 @@ import (
 	"math"
 	"sort"
 	"testing"
-
 	"time"
 
 	"github.com/stretchr/testify/assert"
