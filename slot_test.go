@@ -42,13 +42,13 @@ func TestSlots(t *testing.T) {
 	// create slot1 and add it
 	start1 := uint32(1491134201) // 201704020 (UTC)
 	slot1 := uint32(20)          // 20 seconds
-	err = db.AddSlot(target, start1, slot1)
+	err = db.addSlot(target, start1, slot1)
 	assert.NoError(t, err, "should have no error")
 
 	// create slot2 and add it
 	start2 := uint32(1551134201) // 201902255 (UTC)
 	slot2 := uint32(40)          // 40 seconds
-	err = db.AddSlot(target, start2, slot2)
+	err = db.addSlot(target, start2, slot2)
 	assert.NoError(t, err, "should have no error")
 
 	targets := db.GetTargets()
@@ -61,7 +61,7 @@ func TestSlots(t *testing.T) {
 	// create slot3 and add it
 	start3 := uint32(1491134202) // 201704020 (UTC)
 	slot3 := uint32(10)          // 10 seconds
-	err = db.AddSlot(target, start3, slot3)
+	err = db.addSlot(target, start3, slot3)
 	assert.NoError(t, err, "should have no error")
 
 	// get slots with bad range

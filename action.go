@@ -15,9 +15,10 @@ const (
 
 // AddAction used to add actions to database
 func (db *TDB) AddAction(target string, ts uint32) error {
-	db.action.contentLock.Lock()
+	cleanTarget := filepath.Clean(target)
 
-	err := handleAction(db, target, ts)
+	db.action.contentLock.Lock()
+	err := handleAction(db, cleanTarget, ts)
 	if err != nil {
 		db.action.contentLock.Unlock()
 		return err
@@ -62,7 +63,7 @@ func (db *TDB) CheckExpirations() error {
 		if now-lasts[i] > actionExp {
 			changed = true
 			p("expired action", zap.String("target", targets[i]))
-			if err := db.AddSlot(targets[i], starts[i], lasts[i]-starts[i]); err != nil {
+			if err := db.addSlot(targets[i], starts[i], lasts[i]-starts[i]); err != nil {
 				db.action.contentLock.Unlock()
 				return err
 			}
@@ -93,7 +94,7 @@ func handleAction(db *TDB, target string, ts uint32) error {
 	if ts > last {
 		if ts-last > actionExp {
 			p("new slot", zap.Uint32("ts", ts), zap.Uint32("last", last))
-			if err := db.AddSlot(target, start, last-start); err != nil {
+			if err := db.addSlot(target, start, last-start); err != nil {
 				return err
 			}
 			actions[target] = encodeAction(ts, ts+1)

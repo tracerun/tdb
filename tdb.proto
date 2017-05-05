@@ -3,3 +3,7 @@ syntax = "proto3";
 message Info {
   map<string, bytes> fields = 1;
 }
+
+message Project {
+  repeated string targets = 1;
+}

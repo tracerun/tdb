@@ -1,6 +1,5 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-    "editor.fontSize": 13,
     "editor.quickSuggestionsDelay": 20,
     "editor.wordWrap": "wordWrapColumn",
     "editor.wordWrapColumn": 120,
@@ -19,5 +18,9 @@
     "go.formatTool": "goreturns",
     "go.useCodeSnippetsOnFunctionSuggest": true,
     "go.inferGopath": true,
-    "go.gocodeAutoBuild": true
+    "go.gocodeAutoBuild": true,
+    "go.enableCodeLens": {
+        "references": false,
+        "runtest": true
+    }
 }

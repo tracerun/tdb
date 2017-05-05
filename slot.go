@@ -9,9 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"go.uber.org/zap"
-
 	"github.com/tracerun/locker"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -35,8 +34,8 @@ func init() {
 	srcLocker = locker.New()
 }
 
-// AddSlot to add a slot to database
-func (db *TDB) AddSlot(target string, start, howlong uint32) error {
+// addSlot to add a slot to database
+func (db *TDB) addSlot(target string, start, howlong uint32) error {
 	aliasedHome, err := db.getAliasedHome(target)
 	if err != nil {
 		return err

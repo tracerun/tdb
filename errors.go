@@ -15,4 +15,8 @@ var (
 	ErrRange = errors.New("range is wrong")
 	// ErrActionValue error for action value field
 	ErrActionValue = errors.New("action value bytes wrong")
+	// ErrProjectUnavailable error for project handle
+	ErrProjectUnavailable = errors.New("project not available")
+	// ErrTargetNotBelongToProject error for wrong target to project
+	ErrTargetNotBelongToProject = errors.New("target not belong to project")
 )
